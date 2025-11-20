@@ -3,9 +3,13 @@ Improved security Hospital Management System using MySQL, Php and Bootstrap
 
 GROUP 20
 Julian Koh Chee Yong
+
 Jayashree
+
 Tan Han Khai
+
 Steven Teo
+
 Yong Huey Syh
 
 Video Demo : [Hospital Management System - Youtube](https://www.youtube.com/watch?v=W2XGSM5i9P8)
