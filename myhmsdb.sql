@@ -30,15 +30,17 @@ SET time_zone = "+00:00";
 
 CREATE TABLE `admintb` (
   `username` varchar(50) NOT NULL,
-  `password` varchar(30) NOT NULL
+  `password` varchar(30) NOT NULL,
+  `login_attempts` int(11) NOT NULL DEFAULT '0',
+  `lockout_time` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
 -- Dumping data for table `admintb`
 --
 
-INSERT INTO `admintb` (`username`, `password`) VALUES
-('admin', 'admin123');
+INSERT INTO `admintb` (`username`, `password`, `login_attempts`, `lockout_time`) VALUES
+('admin', 'admin123', 0, NULL);
 
 -- --------------------------------------------------------
 
@@ -119,22 +121,24 @@ CREATE TABLE `doctb` (
   `password` varchar(50) NOT NULL,
   `email` varchar(50) NOT NULL,
   `spec` varchar(50) NOT NULL,
-  `docFees` int(10) NOT NULL
+  `docFees` int(10) NOT NULL,
+  `login_attempts` int(11) NOT NULL DEFAULT '0',
+  `lockout_time` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
 -- Dumping data for table `doctb`
 --
 
-INSERT INTO `doctb` (`username`, `password`, `email`, `spec`, `docFees`) VALUES
-('ashok', 'ashok123', 'ashok@gmail.com', 'General', 500),
-('arun', 'arun123', 'arun@gmail.com', 'Cardiologist', 600),
-('Dinesh', 'dinesh123', 'dinesh@gmail.com', 'General', 700),
-('Ganesh', 'ganesh123', 'ganesh@gmail.com', 'Pediatrician', 550),
-('Kumar', 'kumar123', 'kumar@gmail.com', 'Pediatrician', 800),
-('Amit', 'amit123', 'amit@gmail.com', 'Cardiologist', 1000),
-('Abbis', 'abbis123', 'abbis@gmail.com', 'Neurologist', 1500),
-('Tiwary', 'tiwary123', 'tiwary@gmail.com', 'Pediatrician', 450);
+INSERT INTO `doctb` (`username`, `password`, `email`, `spec`, `docFees`, `login_attempts`, `lockout_time`) VALUES
+('ashok', 'ashok123', 'ashok@gmail.com', 'General', 500, 0, NULL),
+('arun', 'arun123', 'arun@gmail.com', 'Cardiologist', 600, 0, NULL),
+('Dinesh', 'dinesh123', 'dinesh@gmail.com', 'General', 700, 0, NULL),
+('Ganesh', 'ganesh123', 'ganesh@gmail.com', 'Pediatrician', 550, 0, NULL),
+('Kumar', 'kumar123', 'kumar@gmail.com', 'Pediatrician', 800, 0, NULL),
+('Amit', 'amit123', 'amit@gmail.com', 'Cardiologist', 1000, 0, NULL),
+('Abbis', 'abbis123', 'abbis@gmail.com', 'Neurologist', 1500, 0, NULL),
+('Tiwary', 'tiwary123', 'tiwary@gmail.com', 'Pediatrician', 450, 0, NULL);
 
 -- --------------------------------------------------------
 
@@ -150,25 +154,27 @@ CREATE TABLE `patreg` (
   `email` varchar(30) NOT NULL,
   `contact` varchar(10) NOT NULL,
   `password` varchar(30) NOT NULL,
-  `cpassword` varchar(30) NOT NULL
+  `cpassword` varchar(30) NOT NULL,
+  `login_attempts` int(11) NOT NULL DEFAULT '0',
+  `lockout_time` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1;
 
 --
 -- Dumping data for table `patreg`
 --
 
-INSERT INTO `patreg` (`pid`, `fname`, `lname`, `gender`, `email`, `contact`, `password`, `cpassword`) VALUES
-(1, 'Ram', 'Kumar', 'Male', 'ram@gmail.com', '9876543210', 'ram123', 'ram123'),
-(2, 'Alia', 'Bhatt', 'Female', 'alia@gmail.com', '8976897689', 'alia123', 'alia123'),
-(3, 'Shahrukh', 'khan', 'Male', 'shahrukh@gmail.com', '8976898463', 'shahrukh123', 'shahrukh123'),
-(4, 'Kishan', 'Lal', 'Male', 'kishansmart0@gmail.com', '8838489464', 'kishan123', 'kishan123'),
-(5, 'Gautam', 'Shankararam', 'Male', 'gautam@gmail.com', '9070897653', 'gautam123', 'gautam123'),
-(6, 'Sushant', 'Singh', 'Male', 'sushant@gmail.com', '9059986865', 'sushant123', 'sushant123'),
-(7, 'Nancy', 'Deborah', 'Female', 'nancy@gmail.com', '9128972454', 'nancy123', 'nancy123'),
-(8, 'Kenny', 'Sebastian', 'Male', 'kenny@gmail.com', '9809879868', 'kenny123', 'kenny123'),
-(9, 'William', 'Blake', 'Male', 'william@gmail.com', '8683619153', 'william123', 'william123'),
-(10, 'Peter', 'Norvig', 'Male', 'peter@gmail.com', '9609362815', 'peter123', 'peter123'),
-(11, 'Shraddha', 'Kapoor', 'Female', 'shraddha@gmail.com', '9768946252', 'shraddha123', 'shraddha123');
+INSERT INTO `patreg` (`pid`, `fname`, `lname`, `gender`, `email`, `contact`, `password`, `cpassword`,`login_attempts`, `lockout_time`) VALUES
+(1, 'Ram', 'Kumar', 'Male', 'ram@gmail.com', '9876543210', 'ram123', 'ram123', 0, NULL),
+(2, 'Alia', 'Bhatt', 'Female', 'alia@gmail.com', '8976897689', 'alia123', 'alia123', 0, NULL),
+(3, 'Shahrukh', 'khan', 'Male', 'shahrukh@gmail.com', '8976898463', 'shahrukh123', 'shahrukh123', 0, NULL),
+(4, 'Kishan', 'Lal', 'Male', 'kishansmart0@gmail.com', '8838489464', 'kishan123', 'kishan123', 0, NULL),
+(5, 'Gautam', 'Shankararam', 'Male', 'gautam@gmail.com', '9070897653', 'gautam123', 'gautam123', 0, NULL),
+(6, 'Sushant', 'Singh', 'Male', 'sushant@gmail.com', '9059986865', 'sushant123', 'sushant123', 0, NULL),
+(7, 'Nancy', 'Deborah', 'Female', 'nancy@gmail.com', '9128972454', 'nancy123', 'nancy123', 0, NULL),
+(8, 'Kenny', 'Sebastian', 'Male', 'kenny@gmail.com', '9809879868', 'kenny123', 'kenny123', 0, NULL),
+(9, 'William', 'Blake', 'Male', 'william@gmail.com', '8683619153', 'william123', 'william123', 0, NULL),
+(10, 'Peter', 'Norvig', 'Male', 'peter@gmail.com', '9609362815', 'peter123', 'peter123', 0, NULL),
+(11, 'Shraddha', 'Kapoor', 'Female', 'shraddha@gmail.com', '9768946252', 'shraddha123', 'shraddha123', 0, NULL);
 
 -- --------------------------------------------------------
 
