@@ -1,58 +1,44 @@
 <?php
-require_once('csrf_helper.php');
 session_start();
-$con=mysqli_connect("localhost:3307","root","","myhmsdb");
+$con=mysqli_connect("localhost","root","","myhmsdb");
 if(isset($_POST['adsub'])){
-	// Validate CSRF token
-	if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
-		die('<script>alert("CSRF token validation failed!"); window.location.href = "index.php";</script>');
-	}
-	
-	$username=$_POST['username1'];
-	$password=$_POST['password2'];
-	$query="select * from admintb where username='$username' and password='$password';";
-	$result=mysqli_query($con,$query);
-	if(mysqli_num_rows($result)==1)
-	{
-		$_SESSION['username']=$username;
-		header("Location:admin-panel1.php");
-	}
-	else
-		// header("Location:error2.php");
-		echo("<script>alert('Invalid Username or Password. Try Again!');
-          window.location.href = 'index.php';</script>");
+    $username = $_POST['username1'];
+    $password = $_POST['password2'];
+    $username = mysqli_real_escape_string($con, $username);
+
+    $query = "SELECT * FROM admintb WHERE username='$username'";
+    $result = mysqli_query($con, $query);
+
+    if (mysqli_num_rows($result) == 1) {
+        $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+
+        if ($row['lockout_time'] && strtotime($row['lockout_time']) > time()) {
+            echo("<script>alert('Your account is locked. Please try again after 5 minutes.');
+                  window.location.href = 'index.php';</script>");
+        } elseif ($row['password'] == $password) {
+            // Successful login
+            mysqli_query($con, "UPDATE admintb SET login_attempts = 0, lockout_time = NULL WHERE username = '$username'");
+
+            $_SESSION['username'] = $row['username'];
+            header("Location:admin-panel1.php");
+        } else {
+            // Incorrect password
+            $login_attempts = $row['login_attempts'] + 1;
+            if ($login_attempts >= 5) {
+                $lockout_time = date('Y-m-d H:i:s', strtotime('+5 minutes'));
+                mysqli_query($con, "UPDATE admintb SET login_attempts = $login_attempts, lockout_time = '$lockout_time' WHERE username = '$username'");
+                echo("<script>alert('You have exceeded the maximum number of login attempts. Your account is locked for 5 minutes.');
+                      window.location.href = 'index.php';</script>");
+            } else {
+                mysqli_query($con, "UPDATE admintb SET login_attempts = $login_attempts WHERE username = '$username'");
+                echo("<script>alert('Invalid Username or Password. Try Again!');
+                      window.location.href = 'index.php';</script>");
+            }
+        }
+    } else {
+        // User not found
+        echo("<script>alert('Invalid Username or Password. Try Again!');
+              window.location.href = 'index.php';</script>");
+    }
 }
-if(isset($_POST['update_data']))
-{
-	$contact=$_POST['contact'];
-	$status=$_POST['status'];
-	$query="update appointmenttb set payment='$status' where contact='$contact';";
-	$result=mysqli_query($con,$query);
-	if($result)
-		header("Location:updated.php");
-}
-
-
-
-
-function display_docs()
-{
-	global $con;
-	$query="select * from doctb";
-	$result=mysqli_query($con,$query);
-	while($row=mysqli_fetch_array($result))
-	{
-		$name = htmlspecialchars($row['name'], ENT_QUOTES, 'UTF-8');
-		# echo'<option value="" disabled selected>Select Doctor</option>';
-		echo '<option value="'.$name.'">'.$name.'</option>';
-	}
-}
-
-if(isset($_POST['doc_sub']))
-{
-	$name=$_POST['name'];
-	$query="insert into doctb(name)values('$name')";
-	$result=mysqli_query($con,$query);
-	if($result)
-		header("Location:adddoc.php");
-}
+?>
