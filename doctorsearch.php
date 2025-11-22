@@ -8,11 +8,17 @@
 </head>
 <body>
 <?php
+
+include("newfunc.php"); 
+
+
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 if(isset($_POST['doctor_search_submit']))
 {
   try {
       $contact=$_POST['doctor_contact'];
+      
+      
       $query = "select * from doctb where email= ?";
       $stmt = mysqli_prepare($con, $query);
       mysqli_stmt_bind_param($stmt, "s", $contact);
@@ -38,6 +44,7 @@ if(isset($_POST['doctor_search_submit']))
       </thead>
       <tbody>";
 
+      // The loop logic is correct (Displays all matching doctors)
       while ($row=mysqli_fetch_array($result)){
             $username = htmlspecialchars($row['username']);
             $password = htmlspecialchars($row['password']);
@@ -57,6 +64,7 @@ if(isset($_POST['doctor_search_submit']))
       echo "<script>alert('Error: Unable to search doctor.'); window.location.href = 'admin-panel1.php';</script>";
   }
 }
+
 ?>
 <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" crossorigin="anonymous"></script>
