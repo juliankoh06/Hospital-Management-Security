@@ -1,55 +1,43 @@
 <!DOCTYPE html>
 <?php 
-// Include security headers (HTTPS enforcement, security headers)
-require_once(__DIR__ . '/include/security_headers.php');
-include('func1.php');
-// Authentication check - verify doctor is logged in
-if (!isset($_SESSION['dname']) || empty($_SESSION['dname'])) {
-    header("Location: index.php");
-    exit();
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
+try {
+    include('func1.php');
+    $con=mysqli_connect("localhost","root","","myhmsdb");
+} catch (Exception $e) {
+    error_log($e->getMessage());
+    die("System Error: Database connection failed.");
 }
-$con=mysqli_connect("localhost","root","steven1234","myhmsdb");
+
 $doctor = $_SESSION['dname'];
 if(isset($_GET['cancel']))
   {
-    $id = $_GET['ID'];
-    $query=mysqli_query($con,"update appointmenttb set doctorStatus='0' where ID = '$id' AND doctor='$doctor'");
-    if($query)
-    {
-      echo "<script>alert('Your appointment successfully cancelled');</script>";
+    try {
+        $id = $_GET['ID'];
+        $stmt = $con->prepare("update appointmenttb set doctorStatus='0' where ID = ?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $query = $stmt->get_result();
+        if($stmt)
+        {
+          echo "<script>alert('Your appointment successfully cancelled');</script>";
+        }
+    } catch (mysqli_sql_exception $e) {
+        error_log($e->getMessage());
+        echo "<script>alert('Error: Unable to cancel appointment.');</script>";
     }
   }
-  // if(isset($_GET['prescribe'])){
-    
-  //   $pid = $_GET['pid'];
-  //   $ID = $_GET['ID'];
-  //   $appdate = $_GET['appdate'];
-  //   $apptime = $_GET['apptime'];
-  //   $disease = $_GET['disease'];
-  //   $allergy = $_GET['allergy'];
-  //   $prescription = $_GET['prescription'];
-  //   $query=mysqli_query($con,"insert into prestb(doctor,pid,ID,appdate,apptime,disease,allergy,prescription) values ('$doctor',$pid,$ID,'$appdate','$apptime','$disease','$allergy','$prescription');");
-  //   if($query)
-  //   {
-  //     echo "<script>alert('Prescribed successfully!');</script>";
-  //   }
-  //   else{
-  //     echo "<script>alert('Unable to process your request. Try again!');</script>";
-  //   }
-  // }
-
 
 ?>
 <html lang="en">
   <head>
 
 
-    <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" type="text/css" href="font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="style.css">
-    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
     <link rel="shortcut icon" type="image/x-icon" href="images/favicon.png" />
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
@@ -120,6 +108,7 @@ if(isset($_GET['cancel']))
   </div>
   <div class="col-md-8" style="margin-top: 3%;">
     <div class="tab-content" id="nav-tabContent" style="width: 950px;">
+      
       <div class="tab-pane fade show active" id="list-dash" role="tabpanel" aria-labelledby="list-dash-list">
         
               <div class="container-fluid container-fullw bg-white" >
@@ -162,9 +151,7 @@ if(isset($_GET['cancel']))
              </div>
            </div>
          </div>
-    
-
-    <div class="tab-pane fade" id="list-app" role="tabpanel" aria-labelledby="list-home-list">
+         <div class="tab-pane fade" id="list-app" role="tabpanel" aria-labelledby="list-home-list">
         
               <table class="table table-hover">
                 <thead>
@@ -186,23 +173,26 @@ if(isset($_GET['cancel']))
                 </thead>
                 <tbody>
                   <?php 
-                    $con=mysqli_connect("localhost","root","steven1234","myhmsdb");
-                    global $con;
+                  try {
+                    $con=mysqli_connect("localhost","root","","myhmsdb");
                     $dname = $_SESSION['dname'];
-                    $query = "select pid,ID,fname,lname,gender,email,contact,appdate,apptime,userStatus,doctorStatus from appointmenttb where doctor='$dname';";
-                    $result = mysqli_query($con,$query);
-                    while ($row = mysqli_fetch_array($result)){
+                    $stmt = $con->prepare("select pid,ID,fname,lname,gender,email,contact,appdate,apptime,userStatus,doctorStatus from appointmenttb where doctor=?");
+                    $stmt->bind_param("s", $dname);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    while ($row = $result->fetch_assoc()){
+        
                       ?>
                       <tr>
-                      <td><?php echo htmlspecialchars($row['pid'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['ID'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['fname'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['lname'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['gender'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['email'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['contact'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['appdate'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['apptime'], ENT_QUOTES, 'UTF-8');?></td>
+                      <td><?php echo htmlspecialchars($row['pid']);?></td>
+                        <td><?php echo htmlspecialchars($row['ID']);?></td>
+                        <td><?php echo htmlspecialchars($row['fname']);?></td>
+                        <td><?php echo htmlspecialchars($row['lname']);?></td>
+                        <td><?php echo htmlspecialchars($row['gender']);?></td>
+                        <td><?php echo htmlspecialchars($row['email']);?></td>
+                        <td><?php echo htmlspecialchars($row['contact']);?></td>
+                        <td><?php echo htmlspecialchars($row['appdate']);?></td>
+                        <td><?php echo htmlspecialchars($row['apptime']);?></td>
                         <td>
                     <?php if(($row['userStatus']==1) && ($row['doctorStatus']==1))  
                     {
@@ -223,11 +213,11 @@ if(isset($_GET['cancel']))
                         <?php if(($row['userStatus']==1) && ($row['doctorStatus']==1))  
                         { ?>
 
-													
-	                        <a href="doctor-panel.php?ID=<?php echo urlencode($row['ID'])?>&cancel=update" 
+                          
+                          <a href="doctor-panel.php?ID=<?php echo $row['ID']?>&cancel=update" 
                               onClick="return confirm('Are you sure you want to cancel this appointment ?')"
                               title="Cancel Appointment" tooltip-placement="top" tooltip="Remove"><button class="btn btn-danger">Cancel</button></a>
-	                        <?php } else {
+                          <?php } else {
 
                                 echo "Cancelled";
                                 } ?>
@@ -239,7 +229,7 @@ if(isset($_GET['cancel']))
                         <?php if(($row['userStatus']==1) && ($row['doctorStatus']==1))  
                         { ?>
 
-                        <a href="prescribe.php?pid=<?php echo urlencode($row['pid'])?>&ID=<?php echo urlencode($row['ID'])?>&fname=<?php echo urlencode($row['fname'])?>&lname=<?php echo urlencode($row['lname'])?>&appdate=<?php echo urlencode($row['appdate'])?>&apptime=<?php echo urlencode($row['apptime'])?>"
+                        <a href="prescribe.php?pid=<?php echo $row['pid']?>&ID=<?php echo $row['ID']?>&fname=<?php echo $row['fname']?>&lname=<?php echo $row['lname']?>&appdate=<?php echo $row['appdate']?>&apptime=<?php echo $row['apptime']?>"
                         tooltip-placement="top" tooltip="Remove" title="prescribe">
                         <button class="btn btn-success">Prescibe</button></a>
                         <?php } else {
@@ -251,14 +241,16 @@ if(isset($_GET['cancel']))
 
 
                       </tr></a>
-                    <?php } ?>
+                    <?php } 
+                  } catch (mysqli_sql_exception $e) {
+                    error_log($e->getMessage());
+                    echo "<tr><td colspan='13' style='color:red;text-align:center;'>Unable to load appointments.</td></tr>";
+                  }
+                    ?>
                 </tbody>
               </table>
         <br>
       </div>
-
-      
-
       <div class="tab-pane fade" id="list-pres" role="tabpanel" aria-labelledby="list-pres-list">
         <table class="table table-hover">
                 <thead>
@@ -273,97 +265,47 @@ if(isset($_GET['cancel']))
                     <th scope="col">Appointment Time</th>
                     <th scope="col">Disease</th>
                     <th scope="col">Allergy</th>
-                    <th scope="col">Prescribe</th>
+                    <th scope="col">Prescription</th>
                   </tr>
                 </thead>
                 <tbody>
                   <?php 
-
-                    $con=mysqli_connect("localhost","root","steven1234","myhmsdb");
-                    global $con;
-
-                    $query = "select pid,fname,lname,ID,appdate,apptime,disease,allergy,prescription from prestb where doctor='$doctor';";
+                  try {
+                    $con=mysqli_connect("localhost","root","","myhmsdb");
                     
-                    $result = mysqli_query($con,$query);
+                    $stmt = $con->prepare("select pid,fname,lname,ID,appdate,apptime,disease,allergy,prescription from prestb where doctor=?");
+                    $stmt->bind_param("s", $doctor);
+                    $stmt->execute();
+                    $result = $stmt->get_result();
+                    
                     if(!$result){
-                      echo mysqli_error($con);
+                        echo mysqli_error($con);
                     }
-                    
 
-                    while ($row = mysqli_fetch_array($result)){
-                  ?>
+                    while ($row = $result->fetch_assoc()){
+                      ?>
                       <tr>
-                        <td><?php echo htmlspecialchars($row['pid'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['fname'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['lname'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['ID'], ENT_QUOTES, 'UTF-8');?></td>
+                        <td><?php echo htmlspecialchars($row['pid']);?></td>
+                        <td><?php echo htmlspecialchars($row['fname']);?></td>
+                        <td><?php echo htmlspecialchars($row['lname']);?></td>
+                        <td><?php echo htmlspecialchars($row['ID']);?></td>
                         
-                        <td><?php echo htmlspecialchars($row['appdate'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['apptime'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['disease'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['allergy'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['prescription'], ENT_QUOTES, 'UTF-8');?></td>
+                        <td><?php echo htmlspecialchars($row['appdate']);?></td>
+                        <td><?php echo htmlspecialchars($row['apptime']);?></td>
+                        <td><?php echo htmlspecialchars($row['disease']);?></td>
+                        <td><?php echo htmlspecialchars($row['allergy']);?></td>
+                        <td><?php echo htmlspecialchars($row['prescription']);?></td>
                     
                       </tr>
                     <?php }
+                  } catch (mysqli_sql_exception $e) {
+                    error_log($e->getMessage());
+                    echo "<tr><td colspan='9' style='color:red;text-align:center;'>Unable to load prescriptions.</td></tr>";
+                  }
                     ?>
                 </tbody>
               </table>
       </div>
-
-
-
-
-      <div class="tab-pane fade" id="list-app" role="tabpanel" aria-labelledby="list-pat-list">
-        
-              <table class="table table-hover">
-                <thead>
-                  <tr>
-                    <th scope="col">First Name</th>
-                    <th scope="col">Last Name</th>
-                    <th scope="col">Email</th>
-                    <th scope="col">Contact</th>
-                    <th scope="col">Doctor Name</th>
-                    <th scope="col">Consultancy Fees</th>
-                    <th scope="col">Appointment Date</th>
-                    <th scope="col">Appointment Time</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <?php 
-
-                    $con=mysqli_connect("localhost","root","steven1234","myhmsdb");
-                    global $con;
-
-                    $query = "select * from appointmenttb;";
-                    $result = mysqli_query($con,$query);
-                    while ($row = mysqli_fetch_array($result)){
-              
-                      #$fname = $row['fname'];
-                      #$lname = $row['lname'];
-                      #$email = $row['email'];
-                      #$contact = $row['contact'];
-                  ?>
-                      <tr>
-                        <td><?php echo htmlspecialchars($row['fname'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['lname'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['email'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['contact'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['doctor'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['docFees'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['appdate'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['apptime'], ENT_QUOTES, 'UTF-8');?></td>
-                      </tr>
-                    <?php } ?>
-                </tbody>
-              </table>
-        <br>
-      </div>
-
-
-
-
-
       <div class="tab-pane fade" id="list-messages" role="tabpanel" aria-labelledby="list-messages-list">...</div>
       <div class="tab-pane fade" id="list-settings" role="tabpanel" aria-labelledby="list-settings-list">
         <form class="form-group" method="post" action="admin-panel1.php">
@@ -385,8 +327,6 @@ if(isset($_GET['cancel']))
   </div>
 </div>
    </div>
-    <!-- Optional JavaScript -->
-    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>

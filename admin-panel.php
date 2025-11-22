@@ -1,68 +1,76 @@
 <!DOCTYPE html>
 <?php 
-// Include security headers (HTTPS enforcement, security headers)
-require_once(__DIR__ . '/include/security_headers.php');
 include('func.php');  
-include('newfunc.php');
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
-if(!isset($_SESSION['pid'])){
-  header('Location: index1.php');
-  exit();
+try{
+  $con=mysqli_connect("localhost","root","","myhmsdb");
+} catch (mysqli_sql_exception $e) {
+  error_log("Main DB Connection failed: " . $e->getMessage());
+  die("System Error: Database connection failed.");
 }
 
-$con=mysqli_connect("localhost","root","steven1234","myhmsdb");
-
-
-  $pid = $_SESSION['pid'];
-  $username = $_SESSION['username'];
-  $email = $_SESSION['email'];
-  $fname = $_SESSION['fname'];
-  $gender = $_SESSION['gender'];
-  $lname = $_SESSION['lname'];
-  $contact = $_SESSION['contact'];
-
-
+$pid = isset($_SESSION['pid']) ? $_SESSION['pid'] : '';
+$username = isset($_SESSION['username']) ? $_SESSION['username'] : '';
+$email = isset($_SESSION['email']) ? $_SESSION['email'] : '';
+$fname = isset($_SESSION['fname']) ? $_SESSION['fname'] : '';
+$gender = isset($_SESSION['gender']) ? $_SESSION['gender'] : '';
+$lname = isset($_SESSION['lname']) ? $_SESSION['lname'] : '';
+$contact = isset($_SESSION['contact']) ? $_SESSION['contact'] : '';
 
 if(isset($_POST['app-submit']))
 {
   $pid = $_SESSION['pid'];
-  $username = $_SESSION['username'];
-  $email = $_SESSION['email'];
   $fname = $_SESSION['fname'];
   $lname = $_SESSION['lname'];
   $gender = $_SESSION['gender'];
   $contact = $_SESSION['contact'];
-  $doctor=$_POST['doctor'];
-  $email=$_SESSION['email'];
-  # $fees=$_POST['fees'];
-  $docFees=$_POST['docFees'];
-
-  $appdate=$_POST['appdate'];
-  $apptime=$_POST['apptime'];
+  $email = $_SESSION['email'];
+  
+  $doctor = $_POST['doctor'];
+  $docFees = $_POST['docFees'];
+  $appdate = $_POST['appdate'];
+  $apptime = $_POST['apptime'];
+  
   $cur_date = date("Y-m-d");
   date_default_timezone_set('Asia/Kolkata');
   $cur_time = date("H:i:s");
   $apptime1 = strtotime($apptime);
   $appdate1 = strtotime($appdate);
-	
+  
   if(date("Y-m-d",$appdate1)>=$cur_date){
     if((date("Y-m-d",$appdate1)==$cur_date and date("H:i:s",$apptime1)>$cur_time) or date("Y-m-d",$appdate1)>$cur_date) {
-      $check_query = mysqli_query($con,"select apptime from appointmenttb where doctor='$doctor' and appdate='$appdate' and apptime='$apptime'");
 
-        if(mysqli_num_rows($check_query)==0){
-          $query=mysqli_query($con,"insert into appointmenttb(pid,fname,lname,gender,email,contact,doctor,docFees,appdate,apptime,userStatus,doctorStatus) values($pid,'$fname','$lname','$gender','$email','$contact','$doctor','$docFees','$appdate','$apptime','1','1')");
+      try{
+         $check_query = "select apptime from appointmenttb where doctor=? and appdate=? and apptime=?";
+         $stmt_check = mysqli_prepare($con, $check_query);
+         mysqli_stmt_bind_param($stmt_check, "sss", $doctor, $appdate, $apptime);
+         mysqli_stmt_execute($stmt_check);
+         $result_check = mysqli_stmt_get_result($stmt_check);
 
-          if($query)
-          {
-            echo "<script>alert('Your appointment successfully booked');</script>";
-          }
-          else{
-            echo "<script>alert('Unable to process your request. Please try again!');</script>";
-          }
+         if(mysqli_num_rows($result_check)==0){
+            $query = "insert into appointmenttb(pid,fname,lname,gender,email,contact,doctor,docFees,appdate,apptime,userStatus,doctorStatus) values(?,?,?,?,?,?,?,?,?,?,'1','1')";
+            $stmt = mysqli_prepare($con, $query);
+            
+            mysqli_stmt_bind_param($stmt, "isssssssss", $pid, $fname, $lname, $gender, $email, $contact, $doctor, $docFees, $appdate, $apptime);
+            $query = mysqli_stmt_execute($stmt);
+ 
+            if($query)
+            {
+              echo "<script>alert('Your appointment successfully booked');</script>";
+            }
+            else{
+              echo "<script>alert('Unable to process your request. Please try again!');</script>";
+            }
+         }
+         else{
+           echo "<script>alert('We are sorry to inform that the doctor is not available in this time or date. Please choose different time or date!');</script>";
+         }
+      } catch (mysqli_sql_exception $e) {
+        $error_msg = addslashes($e->getMessage());
+        error_log("Booking Error: " . $e->getMessage());
       }
-      else{
-        echo "<script>alert('We are sorry to inform that the doctor is not available in this time or date. Please choose different time or date!');</script>";
-      }
+    
     }
     else{
       echo "<script>alert('Select a time or date in the future!');</script>";
@@ -76,24 +84,33 @@ if(isset($_POST['app-submit']))
 
 if(isset($_GET['cancel']))
   {
-    $id = $_GET['ID'];
-    $query=mysqli_query($con,"update appointmenttb set userStatus='0' where ID = '$id' AND pid = '$pid'");
-    if($query)
-    {
-      echo "<script>alert('Your appointment successfully cancelled');</script>";
+    try{
+      $query="update appointmenttb set userStatus='0' where ID = ?";
+      $stmt = mysqli_prepare($con, $query);
+      mysqli_stmt_bind_param($stmt, "i", $_GET['ID']);
+      $query = mysqli_stmt_execute($stmt);
+      if($query)
+      {
+        echo "<script>alert('Your appointment successfully cancelled');</script>";
+      }
+    } catch (mysqli_sql_exception $e) {
+      error_log("Cancellation Error: " . $e->getMessage());
+      echo "<script>alert('System Error: Could not cancel appointment.');</script>";
     }
   }
 
-
-
-
-
 function generate_bill(){
-  $con=mysqli_connect("localhost","root","steven1234","myhmsdb");
-  $pid = $_SESSION['pid'];
-  $output='';
-  $query=mysqli_query($con,"select p.pid,p.ID,p.fname,p.lname,p.doctor,p.appdate,p.apptime,p.disease,p.allergy,p.prescription,a.docFees from prestb p inner join appointmenttb a on p.ID=a.ID and p.pid = '$pid' and p.ID = '".$_GET['ID']."'");
-  while($row = mysqli_fetch_array($query)){
+  try{
+    $con=mysqli_connect("localhost","root","","myhmsdb");
+    $pid = $_SESSION['pid'];
+    $output='';
+    $query = "select p.pid,p.ID,p.fname,p.lname,p.doctor,p.appdate,p.apptime,p.disease,
+    p.allergy,p.prescription,a.docFees from prestb p inner join appointmenttb a on p.ID=a.ID and p.pid = ? and p.ID = ?";
+    $stmt = mysqli_prepare($con, $query);
+    mysqli_stmt_bind_param($stmt, "ii", $pid, $_GET['ID']);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    while($row = mysqli_fetch_array($result)){
     $output .= '
     <label> Patient ID : </label>'.$row["pid"].'<br/><br/>
     <label> Appointment ID : </label>'.$row["ID"].'<br/><br/>
@@ -105,14 +122,15 @@ function generate_bill(){
     <label> Allergies : </label>'.$row["allergy"].'<br/><br/>
     <label> Prescription : </label>'.$row["prescription"].'<br/><br/>
     <label> Fees Paid : </label>'.$row["docFees"].'<br/>
-    
     ';
 
   }
-  
-  return $output;
+  return $output; // Return inside try
+  } catch (mysqli_sql_exception $e) {
+    error_log("Bill Generation Error: " . $e->getMessage());
+    return "Error generating bill details.";
+  }
 }
-
 
 if(isset($_GET["generate_bill"])){
   require_once("TCPDF/tcpdf.php");
@@ -149,37 +167,34 @@ if(isset($_GET["generate_bill"])){
 }
 
 function get_specs(){
-  $con=mysqli_connect("localhost","root","steven1234","myhmsdb");
-  $query=mysqli_query($con,"select username,spec from doctb");
-  $docarray = array();
-    while($row =mysqli_fetch_assoc($query))
+  try{
+    $con=mysqli_connect("localhost","root","","myhmsdb");
+    $query = "select username,spec from doctb";
+    $stmt = mysqli_prepare($con, $query);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $docarray = array();
+    while($row =mysqli_fetch_assoc($result))
     {
         $docarray[] = $row;
     }
     return json_encode($docarray);
+  } catch (mysqli_sql_exception $e) {
+  error_log("Get Specs Error: " . $e->getMessage());
+  return json_encode([]); // Return empty JSON on error
+  }
 }
 
 ?>
 <html lang="en">
   <head>
 
-
-    <!-- Required meta tags -->
     <meta charset="utf-8">
     <link rel="shortcut icon" type="image/x-icon" href="images/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" type="text/css" href="font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="style.css">
-    <!-- Bootstrap CSS -->
-    
-        <link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
-
-    
-  
-    
-    
-
-
+    <link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
 
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
 
@@ -316,20 +331,6 @@ function get_specs(){
               <form class="form-group" method="post" action="admin-panel.php">
                 <div class="row">
                   
-                  <!-- <?php
-
-                        $con=mysqli_connect("localhost","root","steven1234","myhmsdb");
-                        $query=mysqli_query($con,"select username,spec from doctb");
-                        $docarray = array();
-                          while($row =mysqli_fetch_assoc($query))
-                          {
-                              $docarray[] = $row;
-                          }
-                          echo json_encode($docarray);
-
-                  ?> -->
-        
-
                     <div class="col-md-4">
                           <label for="spec">Specialization:</label>
                         </div>
@@ -365,7 +366,9 @@ function get_specs(){
                     <select name="doctor" class="form-control" id="doctor" required="required">
                       <option value="" disabled selected>Select Doctor</option>
                 
-                      <?php display_docs(); ?>
+                      <?php 
+                      display_docs(); 
+                      ?>
                     </select>
                   </div><br/><br/> 
 
@@ -376,57 +379,11 @@ function get_specs(){
                 document.getElementById('docFees').value = selection;
               };
             </script>
-
-                  
-                  
-
-                  
-                        <!-- <div class="col-md-4"><label for="doctor">Doctors:</label></div>
-                                <div class="col-md-8">
-                                    <select name="doctor" class="form-control" id="doctor1" required="required">
-                                      <option value="" disabled selected>Select Doctor</option>
-                                      
-                                    </select>
-                                </div>
-                                <br><br> -->
-
-                                <!-- <script>
-                                  document.getElementById("spec").onchange = function updateSpecs(event) {
-                                      var selected = document.querySelector(`[data-value=${this.value}]`).getAttribute("value");
-                                      console.log(selected);
-
-                                      var options = document.getElementById("doctor1").querySelectorAll("option");
-
-                                      for (i = 0; i < options.length; i++) {
-                                        var currentOption = options[i];
-                                        var category = options[i].getAttribute("data-spec");
-
-                                        if (category == selected) {
-                                          currentOption.style.display = "block";
-                                        } else {
-                                          currentOption.style.display = "none";
-                                        }
-                                      }
-                                    }
-                                </script> -->
-
-                        
-                    <!-- <script>
-                    let data = 
-                
-              document.getElementById('spec').onchange = function updateSpecs(e) {
-                let values = data.filter(obj => obj.spec == this.value).map(o => o.username);   
-                document.getElementById('doctor1').value = document.querySelector(`[value=${values}]`).getAttribute('data-value');
-              };
-            </script> -->
-
-
                   
                   <div class="col-md-4"><label for="consultancyfees">
                                 Consultancy Fees
                               </label></div>
                               <div class="col-md-8">
-                              <!-- <div id="docFees">Select a doctor</div> -->
                               <input class="form-control" type="text" name="docFees" id="docFees" readonly="readonly"/>
                   </div><br><br>
 
@@ -435,7 +392,6 @@ function get_specs(){
 
                   <div class="col-md-4"><label>Appointment Time</label></div>
                   <div class="col-md-8">
-                    <!-- <input type="time" class="form-control" name="apptime"> -->
                     <select name="apptime" class="form-control" id="apptime" required="required">
                       <option value="" disabled selected>Select Time</option>
                       <option value="08:00:00">8:00 AM</option>
@@ -474,24 +430,22 @@ function get_specs(){
                 </thead>
                 <tbody>
                   <?php 
-
-                    $con=mysqli_connect("localhost","root","steven1234","myhmsdb");
-                    global $con;
-
-                    $query = "select ID,doctor,docFees,appdate,apptime,userStatus,doctorStatus from appointmenttb where fname ='$fname' and lname='$lname';";
-                    $result = mysqli_query($con,$query);
+                  try{
+                    $con = mysqli_connect("localhost","root","","myhmsdb");
+                
+                    $query = "select ID,doctor,docFees,appdate,apptime,userStatus,doctorStatus from appointmenttb where fname =? and lname=?;";
+                    $stmt = mysqli_prepare($con, $query);
+                    mysqli_stmt_bind_param($stmt, "ss", $fname, $lname);
+                    mysqli_stmt_execute($stmt);
+                    $result = mysqli_stmt_get_result($stmt);
+                    
                     while ($row = mysqli_fetch_array($result)){
-              
-                      #$fname = $row['fname'];
-                      #$lname = $row['lname'];
-                      #$email = $row['email'];
-                      #$contact = $row['contact'];
                   ?>
                       <tr>
-                        <td><?php echo htmlspecialchars($row['doctor'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['docFees'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['appdate'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['apptime'], ENT_QUOTES, 'UTF-8');?></td>
+                        <td><?php echo htmlspecialchars($row['doctor']);?></td>
+                        <td><?php echo htmlspecialchars($row['docFees']);?></td>
+                        <td><?php echo htmlspecialchars($row['appdate']);?></td>
+                        <td><?php echo htmlspecialchars($row['apptime']);?></td>
                         
                           <td>
                     <?php if(($row['userStatus']==1) && ($row['doctorStatus']==1))  
@@ -513,18 +467,24 @@ function get_specs(){
                         <?php if(($row['userStatus']==1) && ($row['doctorStatus']==1))  
                         { ?>
 
-													
-	                        <a href="admin-panel.php?ID=<?php echo urlencode($row['ID'])?>&cancel=update" 
+                          
+                          <a href="admin-panel.php?ID=<?php echo $row['ID']?>&cancel=update" 
                               onClick="return confirm('Are you sure you want to cancel this appointment ?')"
                               title="Cancel Appointment" tooltip-placement="top" tooltip="Remove"><button class="btn btn-danger">Cancel</button></a>
-	                        <?php } else {
+                          <?php } else {
 
                                 echo "Cancelled";
                                 } ?>
                         
                         </td>
                       </tr>
-                    <?php } ?>
+                    <?php } 
+
+                  } catch (mysqli_sql_exception $e) {
+                    error_log("History Fetch Error: " . $e->getMessage());
+                    echo "<tr><td colspan='6' style='color:red; text-align:center;'>Service Unavailable: Unable to load history.</td></tr>";
+                  }
+                  ?>
                 </tbody>
               </table>
         <br>
@@ -550,45 +510,40 @@ function get_specs(){
                 </thead>
                 <tbody>
                   <?php 
+                  try {
+                    $con=mysqli_connect("localhost","root","","myhmsdb");
 
-                    $con=mysqli_connect("localhost","root","steven1234","myhmsdb");
-                    global $con;
-
-                    $query = "select doctor,ID,appdate,apptime,disease,allergy,prescription from prestb where pid='$pid';";
+                    $query = "select doctor,ID,appdate,apptime,disease,allergy,prescription from prestb where pid=?;";
+                    $stmt = mysqli_prepare($con, $query);
+                    mysqli_stmt_bind_param($stmt, "i", $pid);
+                    mysqli_stmt_execute($stmt);
+                    $result = mysqli_stmt_get_result($stmt);
                     
-                    $result = mysqli_query($con,$query);
-                    if(!$result){
-                      echo mysqli_error($con);
-                    }
-                    
-
                     while ($row = mysqli_fetch_array($result)){
                   ?>
                       <tr>
-                        <td><?php echo htmlspecialchars($row['doctor'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['ID'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['appdate'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['apptime'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['disease'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['allergy'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['prescription'], ENT_QUOTES, 'UTF-8');?></td>
+                        <td><?php echo htmlspecialchars($row['doctor']);?></td>
+                        <td><?php echo htmlspecialchars($row['ID']);?></td>
+                        <td><?php echo htmlspecialchars($row['appdate']);?></td>
+                        <td><?php echo htmlspecialchars($row['apptime']);?></td>
+                        <td><?php echo htmlspecialchars($row['disease']);?></td>
+                        <td><?php echo htmlspecialchars($row['allergy']);?></td>
+                        <td><?php echo htmlspecialchars($row['prescription']);?></td>
                         <td>
                           <form method="get">
-                          <!-- <a href="admin-panel.php?ID=" 
-                              onClick=""
-                              title="Pay Bill" tooltip-placement="top" tooltip="Remove"><button class="btn btn-success">Pay</button>
-                              </a></td> -->
-
-                              <a href="admin-panel.php?ID=<?php echo urlencode($row['ID'])?>">
-                              <input type ="hidden" name="ID" value="<?php echo htmlspecialchars($row['ID'], ENT_QUOTES, 'UTF-8')?>"/>
+                              <a href="admin-panel.php?ID=<?php echo $row['ID']?>">
+                              <input type ="hidden" name="ID" value="<?php echo $row['ID']?>"/>
                               <input type = "submit" onclick="alert('Bill Paid Successfully');" name ="generate_bill" class = "btn btn-success" value="Pay Bill"/>
                               </a>
                               </td>
                               </form>
 
-                    
                       </tr>
                     <?php }
+                    } catch (mysqli_sql_exception $e) {
+                        error_log("Prescription Fetch Error: " . $e->getMessage());
+                        echo "<tr><td colspan='8' style='color:red; text-align:center;'>Service Unavailable: Unable to load prescriptions.</td></tr>";
+                    }
                     ?>
                 </tbody>
               </table>
@@ -612,8 +567,6 @@ function get_specs(){
   </div>
 </div>
    </div>
-    <!-- Optional JavaScript -->
-    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
