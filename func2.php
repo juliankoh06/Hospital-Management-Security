@@ -2,14 +2,20 @@
 session_start();
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
+require_once('csrf_helper.php');
+
 try {
-    $con = mysqli_connect("localhost", "root", "", "myhmsdb");
+    $con = mysqli_connect("localhost", "root", "", "myhmsdb"); 
 } catch (mysqli_sql_exception $e) {
     error_log("Connection Error: " . $e->getMessage());
     die("Database connection failed. Please try again later.");
 }
 
 if(isset($_POST['patsub1'])){
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        die('<script>alert("CSRF token validation failed!"); window.location.href = "index.php";</script>');
+    }
+
     $fname = $_POST['fname'];
     $lname = $_POST['lname'];
     $gender = $_POST['gender'];
@@ -85,6 +91,8 @@ function display_docs()
         while($row=mysqli_fetch_array($result))
         {
             $name = htmlspecialchars($row['username']);
+            $price = htmlspecialchars($row['docFees']);
+            $spec = htmlspecialchars($row['spec']);
             echo '<option value="'.$name.'">'.$name.'</option>';
         }
     } catch (mysqli_sql_exception $e) {
@@ -96,7 +104,7 @@ if(isset($_POST['doc_sub']))
 {
     $name=$_POST['name'];
     try {
-        $query="insert into doctb(name)values(?)";
+        $query="insert into doctb(username)values(?)";
         $stmt = mysqli_prepare($con, $query);
         mysqli_stmt_bind_param($stmt, "s", $name);
         $result = mysqli_stmt_execute($stmt);
@@ -119,25 +127,7 @@ function display_admin_panel(){
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
       <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
   <a class="navbar-brand" href="#"><i class="fa fa-user-plus" aria-hidden="true"></i> Global Hospital</a>
-  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-    <span class="navbar-toggler-icon"></span>
-  </button>
-
-  <div class="collapse navbar-collapse" id="navbarSupportedContent">
-     <ul class="navbar-nav mr-auto">
-       <li class="nav-item">
-        <a class="nav-link" href="logout.php"><i class="fa fa-sign-out" aria-hidden="true"></i>Logout</a>
-      </li>
-       <li class="nav-item">
-        <a class="nav-link" href="#"></a>
-      </li>
-    </ul>
-    <form class="form-inline my-2 my-lg-0" method="post" action="search.php">
-      <input class="form-control mr-sm-2" type="text" placeholder="enter contact number" aria-label="Search" name="contact">
-      <input type="submit" class="btn btn-outline-light my-2 my-sm-0 btn btn-outline-light" id="inputbtn" name="search_submit" value="Search">
-    </form>
-  </div>
-</nav>
+  </nav>
   </head>
   <style type="text/css">
     button:hover{cursor:pointer;}
@@ -177,9 +167,11 @@ function display_admin_panel(){
                   <div class="col-md-8"><input type="text" class="form-control"  name="contact"></div><br><br>
                   <div class="col-md-4"><label>Doctor:</label></div>
                   <div class="col-md-8">
-                   <select name="doctor" class="form-control" >
-                      <?php display_docs();?>
-                    </select>
+                   <select name="doctor" class="form-control">';
+                   
+    display_docs(); 
+    
+    echo '         </select>
                   </div><br><br>
                   <div class="col-md-4"><label>Payment:</label></div>
                   <div class="col-md-8">
@@ -199,32 +191,7 @@ function display_admin_panel(){
           </div>
         </div><br>
       </div>
-      <div class="tab-pane fade" id="list-profile" role="tabpanel" aria-labelledby="list-profile-list">
-        <div class="card">
-          <div class="card-body">
-            <form class="form-group" method="post" action="func.php">
-              <input type="text" name="contact" class="form-control" placeholder="enter contact"><br>
-              <select name="status" class="form-control">
-               <option value="" disabled selected>Select Payment Status to update</option>
-                <option value="paid">paid</option>
-                <option value="pay later">pay later</option>
-              </select><br><hr>
-              <input type="submit" value="update" name="update_data" class="btn btn-primary">
-            </form>
-          </div>
-        </div><br><br>
       </div>
-      <div class="tab-pane fade" id="list-messages" role="tabpanel" aria-labelledby="list-messages-list">...</div>
-      <div class="tab-pane fade" id="list-settings" role="tabpanel" aria-labelledby="list-settings-list">
-        <form class="form-group" method="post" action="func.php">
-          <label>Doctors name: </label>
-          <input type="text" name="name" placeholder="enter doctors name" class="form-control">
-          <br>
-          <input type="submit" name="doc_sub" value="Add Doctor" class="btn btn-primary">
-        </form>
-      </div>
-       <div class="tab-pane fade" id="list-attend" role="tabpanel" aria-labelledby="list-attend-list">...</div>
-    </div>
   </div>
 </div>
    </div>
@@ -235,14 +202,13 @@ function display_admin_panel(){
    <script type="text/javascript">
    $(document).ready(function(){
     swal({
-  title: "Welcome!",
-  text: "Have a nice day!",
-  imageUrl: "images/sweet.jpg",
-  imageWidth: 400,
-  imageHeight: 200,
-  imageAlt: "Custom image",
-  animation: false
-})</script>
+      title: "Welcome!",
+      text: "Have a nice day!",
+      imageUrl: "images/sweet.jpg",
+      animation: false
+    }); 
+   }); 
+   </script>
   </body>
 </html>';
 }
