@@ -69,8 +69,6 @@ if(isset($_POST['docsub1'])){
 }
 
 if(isset($_POST['patsub'])){
-    // Fixed: Completed the die() statement correctly
-    // 注意：如果你没有 csrf_helper.php，请注释掉下面这个 if 块
     if (function_exists('validateCSRFToken') && !validateCSRFToken($_POST['csrf_token'] ?? '')) {
         die('<script>alert("CSRF token validation failed!"); window.location.href = "index1.php";</script>');
     }
@@ -286,12 +284,7 @@ function display_admin_panel(){
                   <div class="col-md-4"><label>Doctor:</label></div>
                   <div class="col-md-8">
                    <select name="doctor" class="form-control">';
-    
-    // --- 🟢 修复点：在这里切断 echo，执行 PHP 函数 ---
     display_docs(); 
-    // ---------------------------------------------
-
-    // 第二段 HTML：继续输出剩下的部分
     echo '         </select>
                   </div><br><br>
                   <div class="col-md-4"><label>Payment:</label></div>
