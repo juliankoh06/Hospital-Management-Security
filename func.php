@@ -18,6 +18,11 @@ try {
 }
 
 if(isset($_POST['docsub1'])){
+
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        die('<script>alert("CSRF token validation failed!"); window.location.href = "index.php";</script>');
+    }
+    
     $username = $_POST['username3'];
     $password = $_POST['password3'];
 
