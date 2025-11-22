@@ -1,99 +1,121 @@
 <?php
-// 1. Start Session
-// Required for both CSRF validation and general logic.
 session_start();
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
-// 2. Include CSRF Helper (From 'HEAD' branch)
-require_once('csrf_helper.php');
-
-$con = mysqli_connect("localhost:3307", "root", "steven1234", "myhmsdb");
-
-// It is best practice to check the connection
-if (!$con) {
-    die("Connection failed: " . mysqli_connect_error());
+try {
+    $con = mysqli_connect("localhost", "root", "", "myhmsdb");
+} catch (mysqli_sql_exception $e) {
+    error_log("Connection Error: " . $e->getMessage());
+    die("Database connection failed. Please try again later.");
 }
 
 if(isset($_POST['patsub1'])){
-    // 4. Validate CSRF token (From 'HEAD' branch)
-    // This ensures the form submission is legitimate before processing.
-    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
-        die('<script>alert("CSRF token validation failed!"); window.location.href = "index.php";</script>');
-    }
-	$fname=$_POST['fname'];
-  $lname=$_POST['lname'];
-  $gender=$_POST['gender'];
-  $email=$_POST['email'];
-  $contact=$_POST['contact'];
-	$password=$_POST['password'];
-  $cpassword=$_POST['cpassword'];
-  if($password==$cpassword){
-  	$query="insert into patreg(fname,lname,gender,email,contact,password,cpassword) values ('$fname','$lname','$gender','$email','$contact','$password','$cpassword');";
-    $result=mysqli_query($con,$query);
-    if($result){
-        $_SESSION['username'] = $_POST['fname']." ".$_POST['lname'];
-        $_SESSION['fname'] = $_POST['fname'];
-        $_SESSION['lname'] = $_POST['lname'];
-        $_SESSION['gender'] = $_POST['gender'];
-        $_SESSION['contact'] = $_POST['contact'];
-        $_SESSION['email'] = $_POST['email'];
-        header("Location:admin-panel.php");
+    $fname = $_POST['fname'];
+    $lname = $_POST['lname'];
+    $gender = $_POST['gender'];
+    $email = $_POST['email'];
+    $contact = $_POST['contact'];
+    $password = $_POST['password'];
+    $cpassword = $_POST['cpassword'];
+
+    $uppercase = preg_match('@[A-Z]@', $password);
+    $lowercase = preg_match('@[a-z]@', $password);
+    $number    = preg_match('@[0-9]@', $password);
+    $specialChars = preg_match('@[^\w]@', $password);
+
+    if(!$uppercase || !$lowercase || !$number || !$specialChars || strlen($password) < 8) {
+        echo("<script>alert('Password should be at least 8 characters long and should include at least one upper case letter, one number, and one special character.');
+              window.location.href = 'index.php';</script>");
     } 
-
-    $query1 = "select * from patreg;";
-    $result1 = mysqli_query($con,$query1);
-    if($result1){
-      $_SESSION['pid'] = $row['pid'];
+    elseif($password == $cpassword) {
+        try {
+            $query = "insert into patreg(fname,lname,gender,email,contact,password,cpassword,login_attempts,lockout_time) values (?,?,?,?,?,?,?,0,NULL);";
+            $stmt = mysqli_prepare($con, $query);
+            mysqli_stmt_bind_param($stmt, "ssssiss", $fname, $lname, $gender, $email, $contact, $password, $cpassword);
+            $result = mysqli_stmt_execute($stmt);
+            
+            if($result){
+                $pid = mysqli_insert_id($con); 
+                
+                $_SESSION['pid'] = $pid;
+                $_SESSION['username'] = $fname . " " . $lname;
+                $_SESSION['fname'] = $fname;
+                $_SESSION['lname'] = $lname;
+                $_SESSION['gender'] = $gender;
+                $_SESSION['contact'] = $contact;
+                $_SESSION['email'] = $email;
+                
+                header("Location:admin-panel.php");
+            } 
+        } catch (mysqli_sql_exception $e) {
+            error_log($e->getMessage());
+            echo "<script>alert('System Error: Registration failed. Email might already exist.'); window.location.href = 'index.php';</script>";
+        }
+    } 
+    else {
+        header("Location:error1.php");
     }
-
-  }
-  else{
-    header("Location:error1.php");
-  }
 }
+
 if(isset($_POST['update_data']))
 {
-	$contact=$_POST['contact'];
-	$status=$_POST['status'];
-	$query="update appointmenttb set payment='$status' where contact='$contact';";
-	$result=mysqli_query($con,$query);
-	if($result)
-		header("Location:updated.php");
+    $contact=$_POST['contact'];
+    $status=$_POST['status'];
+    try {
+        $query="update appointmenttb set payment=? where contact=?;";
+        $stmt = mysqli_prepare($con, $query);
+        mysqli_stmt_bind_param($stmt, "ss", $status, $contact);
+        $result = mysqli_stmt_execute($stmt);
+        if($result)
+            header("Location:updated.php");
+    } catch (mysqli_sql_exception $e) {
+        error_log($e->getMessage());
+        echo "<script>alert('System Error: Update failed.');</script>";
+    }
 }
 
-
-
-
-// function display_docs()
-// {
-// 	global $con;
-// 	$query="select * from doctb";
-// 	$result=mysqli_query($con,$query);
-// 	while($row=mysqli_fetch_array($result))
-// 	{
-// 		$name=$row['name'];
-// 		# echo'<option value="" disabled selected>Select Doctor</option>';
-// 		echo '<option value="'.$name.'">'.$name.'</option>';
-// 	}
-// }
+function display_docs()
+{
+    global $con;
+    try {
+        $query="select * from doctb";
+        $stmt = mysqli_prepare($con, $query);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        while($row=mysqli_fetch_array($result))
+        {
+            $name = htmlspecialchars($row['username']);
+            echo '<option value="'.$name.'">'.$name.'</option>';
+        }
+    } catch (mysqli_sql_exception $e) {
+        error_log($e->getMessage());
+    }
+}
 
 if(isset($_POST['doc_sub']))
 {
-	$name=$_POST['name'];
-	$query="insert into doctb(name)values('$name')";
-	$result=mysqli_query($con,$query);
-	if($result)
-		header("Location:adddoc.php");
+    $name=$_POST['name'];
+    try {
+        $query="insert into doctb(name)values(?)";
+        $stmt = mysqli_prepare($con, $query);
+        mysqli_stmt_bind_param($stmt, "s", $name);
+        $result = mysqli_stmt_execute($stmt);
+        if($result)
+            header("Location:adddoc.php");
+    } catch (mysqli_sql_exception $e) {
+        error_log($e->getMessage());
+        echo "<script>alert('System Error: Unable to add doctor.');</script>";
+    }
 }
+
 function display_admin_panel(){
-	echo '<!DOCTYPE html>
+    echo '<!DOCTYPE html>
 <html lang="en">
   <head>
-    <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" type="text/css" href="font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="style.css">
-    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
       <nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top">
   <a class="navbar-brand" href="#"><i class="fa fa-user-plus" aria-hidden="true"></i> Global Hospital</a>
@@ -136,12 +158,6 @@ function display_admin_panel(){
     </div><br>
   </div>
 
-  
-
-
-
-
-
   <div class="col-md-8">
     <div class="tab-content" id="nav-tabContent">
       <div class="tab-pane fade show active" id="list-home" role="tabpanel" aria-labelledby="list-home-list">
@@ -162,15 +178,7 @@ function display_admin_panel(){
                   <div class="col-md-4"><label>Doctor:</label></div>
                   <div class="col-md-8">
                    <select name="doctor" class="form-control" >
-
-                     <!-- <option value="" disabled selected>Select Doctor</option>
-                     <option value="Dr. Punam Shaw">Dr. Punam Shaw</option>
-                      <option value="Dr. Ashok Goyal">Dr. Ashok Goyal</option> -->
                       <?php display_docs();?>
-
-
-
-
                     </select>
                   </div><br><br>
                   <div class="col-md-4"><label>Payment:</label></div>
@@ -220,16 +228,13 @@ function display_admin_panel(){
   </div>
 </div>
    </div>
-    <!-- Optional JavaScript -->
-    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
-    <!--Sweet alert js-->
-   <script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/7.33.1/sweetalert2.all.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/7.33.1/sweetalert2.all.js"></script>
    <script type="text/javascript">
    $(document).ready(function(){
-   	swal({
+    swal({
   title: "Welcome!",
   text: "Have a nice day!",
   imageUrl: "images/sweet.jpg",

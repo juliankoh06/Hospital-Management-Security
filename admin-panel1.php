@@ -1,19 +1,13 @@
 <!DOCTYPE html>
 <?php 
-// Include security headers (HTTPS enforcement, security headers)
-require_once(__DIR__ . '/include/security_headers.php');
-// Start session if not already started
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-// Authentication check - verify admin/receptionist is logged in
-if (!isset($_SESSION['username']) || empty($_SESSION['username'])) {
-    header("Location: index.php");
-    exit();
-}
-$con=mysqli_connect("localhost","root","steven1234","myhmsdb");
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
-include('newfunc.php');
+try {
+    $con = mysqli_connect("localhost","root","","myhmsdb");
+} catch (mysqli_sql_exception $e) {
+    error_log("Connection error: " . $e->getMessage());
+    die("System Error: Database connection failed.");
+}
 
 if(isset($_POST['docsub']))
 {
@@ -22,26 +16,52 @@ if(isset($_POST['docsub']))
   $demail=$_POST['demail'];
   $spec=$_POST['special'];
   $docFees=$_POST['docFees'];
-  $query="insert into doctb(username,password,email,spec,docFees)values('$doctor','$dpassword','$demail','$spec','$docFees')";
-  $result=mysqli_query($con,$query);
-  if($result)
-    {
-      echo "<script>alert('Doctor added successfully!');</script>";
+
+  $uppercase = preg_match('@[A-Z]@', $dpassword);
+  $lowercase = preg_match('@[a-z]@', $dpassword);
+  $number    = preg_match('@[0-9]@', $dpassword);
+  $specialChars = preg_match('@[^\w]@', $dpassword);
+
+  if(!$uppercase || !$lowercase || !$number || !$specialChars || strlen($dpassword) < 8) {
+      echo("<script>alert('Password should be at least 8 characters long and should include at least one upper case letter, one number, and one special character.');
+            window.location.href = 'admin-panel1.php#list-settings';</script>");
+  } 
+  else {
+      try {
+          $query="insert into doctb(username,password,email,spec,docFees,login_attempts,lockout_time) values(?,?,?,?,?,0,NULL)";
+          $stmt = mysqli_prepare($con, $query);
+          mysqli_stmt_bind_param($stmt, "sssss", $doctor, $dpassword, $demail, $spec, $docFees);
+          $result=mysqli_stmt_execute($stmt);
+          if($result)
+            {
+              echo "<script>alert('Doctor added successfully!');</script>";
+          }
+      } catch (mysqli_sql_exception $e) {
+          error_log("Add Doctor Error: " . $e->getMessage());
+          echo "<script>alert('Error: Unable to add doctor.');</script>";
+      }
   }
 }
 
 
 if(isset($_POST['docsub1']))
 {
-  $demail=$_POST['demail'];
-  $query="delete from doctb where email='$demail';";
-  $result=mysqli_query($con,$query);
-  if($result)
-    {
-      echo "<script>alert('Doctor removed successfully!');</script>";
-  }
-  else{
-    echo "<script>alert('Unable to delete!');</script>";
+  try {
+      $demail=$_POST['demail'];
+      $query="delete from doctb where email=?;";
+      $stmt = mysqli_prepare($con, $query);
+      mysqli_stmt_bind_param($stmt, "s", $demail);
+      $result=mysqli_stmt_execute($stmt);
+      if($result)
+        {
+          echo "<script>alert('Doctor removed successfully!');</script>";
+      }
+      else{
+        echo "<script>alert('Unable to delete!');</script>";
+      }
+  } catch (mysqli_sql_exception $e) {
+      error_log("Delete Doctor Error: " . $e->getMessage());
+      echo "<script>alert('Error: Unable to delete doctor.');</script>";
   }
 }
 
@@ -51,13 +71,11 @@ if(isset($_POST['docsub1']))
   <head>
 
 
-    <!-- Required meta tags -->
     <meta charset="utf-8">
     <link rel="shortcut icon" type="image/x-icon" href="images/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <link rel="stylesheet" type="text/css" href="font-awesome-4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet" href="style.css">
-    <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="vendor/fontawesome/css/font-awesome.min.css">
     <link href="https://fonts.googleapis.com/css?family=IBM+Plex+Sans&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/css/bootstrap.min.css" integrity="sha384-/Y6pD6FV/Vv2HJnA6t+vslU6fwYXjCFtcEpHbNJ0lyAFsXTsjBbfaDjzALeQsN6M" crossorigin="anonymous">
@@ -283,26 +301,31 @@ if(isset($_POST['docsub1']))
                 </thead>
                 <tbody>
                   <?php 
-                    $con=mysqli_connect("localhost","root","steven1234","myhmsdb");
-                    global $con;
-                    $query = "select * from doctb";
-                    $result = mysqli_query($con,$query);
-                    while ($row = mysqli_fetch_array($result)){
-                      $username = $row['username'];
-                      $spec = $row['spec'];
-                      $email = $row['email'];
-                      $password = $row['password'];
-                      $docFees = $row['docFees'];
-                      
-                      echo "<tr>
-                        <td>$username</td>
-                        <td>$spec</td>
-                        <td>$email</td>
-                        <td>$password</td>
-                        <td>$docFees</td>
-                      </tr>";
+                    try {
+                        $con=mysqli_connect("localhost","root","","myhmsdb");
+                        $query = "select * from doctb";
+                        $stmt = mysqli_prepare($con, $query);
+                        mysqli_stmt_execute($stmt);
+                        $result = mysqli_stmt_get_result($stmt);
+                        while ($row = mysqli_fetch_array($result)){
+                          $username = htmlspecialchars($row['username']);
+                          $spec = htmlspecialchars($row['spec']);
+                          $email = htmlspecialchars($row['email']);
+                          $password = htmlspecialchars($row['password']);
+                          $docFees = htmlspecialchars($row['docFees']);
+                          
+                          echo "<tr>
+                            <td>$username</td>
+                            <td>$spec</td>
+                            <td>$email</td>
+                            <td>$password</td>
+                            <td>$docFees</td>
+                          </tr>";
+                        }
+                    } catch (mysqli_sql_exception $e) {
+                        error_log("Doctor List Error: " . $e->getMessage());
+                        echo "<tr><td colspan='5' style='color:red; text-align:center;'>Unable to load doctor list</td></tr>";
                     }
-
                   ?>
                 </tbody>
               </table>
@@ -334,30 +357,35 @@ if(isset($_POST['docsub1']))
                 </thead>
                 <tbody>
                   <?php 
-                    $con=mysqli_connect("localhost","root","steven1234","myhmsdb");
-                    global $con;
-                    $query = "select * from patreg";
-                    $result = mysqli_query($con,$query);
-                    while ($row = mysqli_fetch_array($result)){
-                      $pid = $row['pid'];
-                      $fname = $row['fname'];
-                      $lname = $row['lname'];
-                      $gender = $row['gender'];
-                      $email = $row['email'];
-                      $contact = $row['contact'];
-                      $password = $row['password'];
-                      
-                      echo "<tr>
-                        <td>$pid</td>
-                        <td>$fname</td>
-                        <td>$lname</td>
-                        <td>$gender</td>
-                        <td>$email</td>
-                        <td>$contact</td>
-                        <td>$password</td>
-                      </tr>";
+                    try {
+                        $con=mysqli_connect("localhost","root","","myhmsdb");
+                        $query = "select * from patreg";
+                        $stmt = mysqli_prepare($con, $query);
+                        mysqli_stmt_execute($stmt);
+                        $result = mysqli_stmt_get_result($stmt);
+                        while ($row = mysqli_fetch_array($result)){
+                          $pid = htmlspecialchars($row['pid']);
+                          $fname = htmlspecialchars($row['fname']);
+                          $lname = htmlspecialchars($row['lname']);
+                          $gender = htmlspecialchars($row['gender']);
+                          $email = htmlspecialchars($row['email']);
+                          $contact = htmlspecialchars($row['contact']);
+                          $password = htmlspecialchars($row['password']);
+                          
+                          echo "<tr>
+                            <td>$pid</td>
+                            <td>$fname</td>
+                            <td>$lname</td>
+                            <td>$gender</td>
+                            <td>$email</td>
+                            <td>$contact</td>
+                            <td>$password</td>
+                          </tr>";
+                        }
+                    } catch (mysqli_sql_exception $e) {
+                        error_log("Patient List Error: " . $e->getMessage());
+                        echo "<tr><td colspan='7' style='color:red; text-align:center;'>Unable to load patient list</td></tr>";
                     }
-
                   ?>
                 </tbody>
               </table>
@@ -390,37 +418,42 @@ if(isset($_POST['docsub1']))
                 </thead>
                 <tbody>
                   <?php 
-                    $con=mysqli_connect("localhost","root","steven1234","myhmsdb");
-                    global $con;
-                    $query = "select * from prestb";
-                    $result = mysqli_query($con,$query);
-                    while ($row = mysqli_fetch_array($result)){
-                      $doctor = $row['doctor'];
-                      $pid = $row['pid'];
-                      $ID = $row['ID'];
-                      $fname = $row['fname'];
-                      $lname = $row['lname'];
-                      $appdate = $row['appdate'];
-                      $apptime = $row['apptime'];
-                      $disease = $row['disease'];
-                      $allergy = $row['allergy'];
-                      $pres = $row['prescription'];
+                    try {
+                        $con=mysqli_connect("localhost","root","","myhmsdb");
+                        $query = "select * from prestb";
+                        $stmt = mysqli_prepare($con, $query);
+                        mysqli_stmt_execute($stmt);
+                        $result = mysqli_stmt_get_result($stmt);
+                        while ($row = mysqli_fetch_array($result)){
+                          $doctor = htmlspecialchars($row['doctor']);
+                          $pid = htmlspecialchars($row['pid']);
+                          $ID = htmlspecialchars($row['ID']);
+                          $fname = htmlspecialchars($row['fname']);
+                          $lname = htmlspecialchars($row['lname']);
+                          $appdate = htmlspecialchars($row['appdate']);
+                          $apptime = htmlspecialchars($row['apptime']);
+                          $disease = htmlspecialchars($row['disease']);
+                          $allergy = htmlspecialchars($row['allergy']);
+                          $pres = htmlspecialchars($row['prescription']);
 
-                      
-                      echo "<tr>
-                        <td>$doctor</td>
-                        <td>$pid</td>
-                        <td>$ID</td>
-                        <td>$fname</td>
-                        <td>$lname</td>
-                        <td>$appdate</td>
-                        <td>$apptime</td>
-                        <td>$disease</td>
-                        <td>$allergy</td>
-                        <td>$pres</td>
-                      </tr>";
+                          
+                          echo "<tr>
+                            <td>$doctor</td>
+                            <td>$pid</td>
+                            <td>$ID</td>
+                            <td>$fname</td>
+                            <td>$lname</td>
+                            <td>$appdate</td>
+                            <td>$apptime</td>
+                            <td>$disease</td>
+                            <td>$allergy</td>
+                            <td>$pres</td>
+                          </tr>";
+                        }
+                    } catch (mysqli_sql_exception $e) {
+                        error_log("Prescription List Error: " . $e->getMessage());
+                        echo "<tr><td colspan='10' style='color:red; text-align:center;'>Unable to load prescriptions</td></tr>";
                     }
-
                   ?>
                 </tbody>
               </table>
@@ -461,26 +494,26 @@ if(isset($_POST['docsub1']))
                 </thead>
                 <tbody>
                   <?php 
-
-                    $con=mysqli_connect("localhost","root","steven1234","myhmsdb");
-                    global $con;
-
-                    $query = "select * from appointmenttb;";
-                    $result = mysqli_query($con,$query);
-                    while ($row = mysqli_fetch_array($result)){
+                    try {
+                        $con=mysqli_connect("localhost","root","","myhmsdb");
+                        $query = "select * from appointmenttb;";
+                        $stmt = mysqli_prepare($con, $query);
+                        mysqli_stmt_execute($stmt);
+                        $result = mysqli_stmt_get_result($stmt);
+                        while ($row = mysqli_fetch_array($result)){
                   ?>
                       <tr>
-                        <td><?php echo htmlspecialchars($row['ID'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['pid'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['fname'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['lname'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['gender'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['email'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['contact'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['doctor'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['docFees'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['appdate'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['apptime'], ENT_QUOTES, 'UTF-8');?></td>
+                        <td><?php echo htmlspecialchars($row['ID']);?></td>
+                        <td><?php echo htmlspecialchars($row['pid']);?></td>
+                        <td><?php echo htmlspecialchars($row['fname']);?></td>
+                        <td><?php echo htmlspecialchars($row['lname']);?></td>
+                        <td><?php echo htmlspecialchars($row['gender']);?></td>
+                        <td><?php echo htmlspecialchars($row['email']);?></td>
+                        <td><?php echo htmlspecialchars($row['contact']);?></td>
+                        <td><?php echo htmlspecialchars($row['doctor']);?></td>
+                        <td><?php echo htmlspecialchars($row['docFees']);?></td>
+                        <td><?php echo htmlspecialchars($row['appdate']);?></td>
+                        <td><?php echo htmlspecialchars($row['apptime']);?></td>
                         <td>
                     <?php if(($row['userStatus']==1) && ($row['doctorStatus']==1))  
                     {
@@ -497,7 +530,12 @@ if(isset($_POST['docsub1']))
                     }
                         ?></td>
                       </tr>
-                    <?php } ?>
+                    <?php } 
+                    } catch (mysqli_sql_exception $e) {
+                        error_log("Appointment List Error: " . $e->getMessage());
+                        echo "<tr><td colspan='12' style='color:red; text-align:center;'>Unable to load appointments</td></tr>";
+                    }
+                    ?>
                 </tbody>
               </table>
         <br>
@@ -571,26 +609,30 @@ if(isset($_POST['docsub1']))
                 </thead>
                 <tbody>
                   <?php 
-
-                    $con=mysqli_connect("localhost","root","steven1234","myhmsdb");
-                    global $con;
-
-                    $query = "select * from contact;";
-                    $result = mysqli_query($con,$query);
-                    while ($row = mysqli_fetch_array($result)){
-              
-                      #$fname = $row['fname'];
-                      #$lname = $row['lname'];
-                      #$email = $row['email'];
-                      #$contact = $row['contact'];
+                    try {
+                        $con=mysqli_connect("localhost","root","","myhmsdb");
+                        $query = "select * from contact;";
+                        $stmt = mysqli_prepare($con, $query);
+                        mysqli_stmt_execute($stmt);
+                        $result = mysqli_stmt_get_result($stmt);
+                        while ($row = mysqli_fetch_array($result)){
+                          $name = htmlspecialchars($row['name']);
+                          $email = htmlspecialchars($row['email']);
+                          $contact = htmlspecialchars($row['contact']);
+                          $message = htmlspecialchars($row['message']);
                   ?>
                       <tr>
-                        <td><?php echo htmlspecialchars($row['name'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['email'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['contact'], ENT_QUOTES, 'UTF-8');?></td>
-                        <td><?php echo htmlspecialchars($row['message'], ENT_QUOTES, 'UTF-8');?></td>
+                        <td><?php echo $name;?></td>
+                        <td><?php echo $email;?></td>
+                        <td><?php echo $contact;?></td>
+                        <td><?php echo $message;?></td>
                       </tr>
-                    <?php } ?>
+                    <?php }
+                    } catch (mysqli_sql_exception $e) {
+                        error_log("Message List Error: " . $e->getMessage());
+                        echo "<tr><td colspan='4' style='color:red; text-align:center;'>Unable to load queries</td></tr>";
+                    }
+                  ?>
                 </tbody>
               </table>
         <br>
@@ -602,8 +644,6 @@ if(isset($_POST['docsub1']))
   </div>
 </div>
    </div>
-    <!-- Optional JavaScript -->
-    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.11.0/umd/popper.min.js" integrity="sha384-b/U6ypiBEHpOf/4+1nzFpr53nxSS+GLCkfwBdFNTxtclqqenISfwAzpKaMNFNmj4" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta/js/bootstrap.min.js" integrity="sha384-h0AbiXch4ZDo7tp9hKZ4TsHbi047NrKGLO3SEJAg45jXxnGIfYzk4Si90RDIqNm1" crossorigin="anonymous"></script>
