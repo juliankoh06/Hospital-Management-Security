@@ -1,13 +1,24 @@
 <?php
-require_once('csrf_helper.php');
+// 1. Start Session
+// Required for both CSRF validation and general logic.
 session_start();
-$con=mysqli_connect("localhost:3307","root","","myhmsdb");
+
+// 2. Include CSRF Helper (From 'HEAD' branch)
+require_once('csrf_helper.php');
+
+$con = mysqli_connect("localhost:3307", "root", "steven1234", "myhmsdb");
+
+// It is best practice to check the connection
+if (!$con) {
+    die("Connection failed: " . mysqli_connect_error());
+}
+
 if(isset($_POST['patsub1'])){
-	// Validate CSRF token
-	if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
-		die('<script>alert("CSRF token validation failed!"); window.location.href = "index.php";</script>');
-	}
-	
+    // 4. Validate CSRF token (From 'HEAD' branch)
+    // This ensures the form submission is legitimate before processing.
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        die('<script>alert("CSRF token validation failed!"); window.location.href = "index.php";</script>');
+    }
 	$fname=$_POST['fname'];
   $lname=$_POST['lname'];
   $gender=$_POST['gender'];

@@ -1,6 +1,17 @@
 <!DOCTYPE html>
 <?php 
-$con=mysqli_connect("localhost:3307","root","","myhmsdb");
+// Include security headers (HTTPS enforcement, security headers)
+require_once(__DIR__ . '/include/security_headers.php');
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+// Authentication check - verify admin/receptionist is logged in
+if (!isset($_SESSION['username']) || empty($_SESSION['username'])) {
+    header("Location: index.php");
+    exit();
+}
+$con=mysqli_connect("localhost","root","steven1234","myhmsdb");
 
 include('newfunc.php');
 
@@ -272,7 +283,7 @@ if(isset($_POST['docsub1']))
                 </thead>
                 <tbody>
                   <?php 
-                    $con=mysqli_connect("localhost:3307","root","","myhmsdb");
+                    $con=mysqli_connect("localhost","root","steven1234","myhmsdb");
                     global $con;
                     $query = "select * from doctb";
                     $result = mysqli_query($con,$query);
@@ -323,7 +334,7 @@ if(isset($_POST['docsub1']))
                 </thead>
                 <tbody>
                   <?php 
-                    $con=mysqli_connect("localhost:3307","root","","myhmsdb");
+                    $con=mysqli_connect("localhost","root","steven1234","myhmsdb");
                     global $con;
                     $query = "select * from patreg";
                     $result = mysqli_query($con,$query);
@@ -379,7 +390,7 @@ if(isset($_POST['docsub1']))
                 </thead>
                 <tbody>
                   <?php 
-                    $con=mysqli_connect("localhost:3307","root","","myhmsdb");
+                    $con=mysqli_connect("localhost","root","steven1234","myhmsdb");
                     global $con;
                     $query = "select * from prestb";
                     $result = mysqli_query($con,$query);
@@ -451,7 +462,7 @@ if(isset($_POST['docsub1']))
                 <tbody>
                   <?php 
 
-                    $con=mysqli_connect("localhost:3307","root","","myhmsdb");
+                    $con=mysqli_connect("localhost","root","steven1234","myhmsdb");
                     global $con;
 
                     $query = "select * from appointmenttb;";
@@ -561,7 +572,7 @@ if(isset($_POST['docsub1']))
                 <tbody>
                   <?php 
 
-                    $con=mysqli_connect("localhost:3307","root","","myhmsdb");
+                    $con=mysqli_connect("localhost","root","steven1234","myhmsdb");
                     global $con;
 
                     $query = "select * from contact;";

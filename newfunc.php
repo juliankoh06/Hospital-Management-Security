@@ -1,6 +1,6 @@
 <?php
 // session_start();
-$con=mysqli_connect("localhost:3307","root","","myhmsdb");
+$con=mysqli_connect("localhost","root","steven1234","myhmsdb");
 // if(isset($_POST['submit'])){
 //  $username=$_POST['username'];
 //  $password=$_POST['password'];

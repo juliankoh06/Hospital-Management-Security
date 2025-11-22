@@ -1,13 +1,24 @@
 <?php
-require_once('csrf_helper.php');
+// 1. Start Session (Must be first for headers and CSRF to work)
 session_start();
-$con=mysqli_connect("localhost:3307","root","","myhmsdb");
+
+// 2. Include Security Headers (From 'security-fixes' branch)
+require_once(__DIR__ . '/include/security_headers.php');
+
+// 3. Include CSRF Helper (From 'HEAD' branch)
+require_once('csrf_helper.php');
+$con = mysqli_connect("localhost", "root", "steven1234", "myhmsdb");
+
+if (!$con) {
+    die("Connection failed: " . mysqli_connect_error());
+}
+
 if(isset($_POST['docsub1'])){
-	// Validate CSRF token
-	if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
-		die('<script>alert("CSRF token validation failed!"); window.location.href = "index.php";</script>');
-	}
-	
+    // 5. Validate CSRF token (From 'HEAD' branch)
+    // Checks the token immediately upon form submission
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        die('<script>alert("CSRF token validation failed!"); window.location.href = "index.php";</script>');
+    }
 	$dname=$_POST['username3'];
 	$dpass=$_POST['password3'];
 	$query="select * from doctb where username='$dname' and password='$dpass';";

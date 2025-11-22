@@ -1,17 +1,24 @@
 <!DOCTYPE html>
 <?php 
+// Include security headers (HTTPS enforcement, security headers)
+require_once(__DIR__ . '/include/security_headers.php');
 include('func1.php');
-$con=mysqli_connect("localhost:3307","root","","myhmsdb");
+// Authentication check - verify doctor is logged in
+if (!isset($_SESSION['dname']) || empty($_SESSION['dname'])) {
+    header("Location: index.php");
+    exit();
+}
+$con=mysqli_connect("localhost","root","steven1234","myhmsdb");
 $doctor = $_SESSION['dname'];
 if(isset($_GET['cancel']))
   {
-    $query=mysqli_query($con,"update appointmenttb set doctorStatus='0' where ID = '".$_GET['ID']."'");
+    $id = $_GET['ID'];
+    $query=mysqli_query($con,"update appointmenttb set doctorStatus='0' where ID = '$id' AND doctor='$doctor'");
     if($query)
     {
       echo "<script>alert('Your appointment successfully cancelled');</script>";
     }
   }
-
   // if(isset($_GET['prescribe'])){
     
   //   $pid = $_GET['pid'];
@@ -179,7 +186,7 @@ if(isset($_GET['cancel']))
                 </thead>
                 <tbody>
                   <?php 
-                    $con=mysqli_connect("localhost:3307","root","","myhmsdb");
+                    $con=mysqli_connect("localhost","root","steven1234","myhmsdb");
                     global $con;
                     $dname = $_SESSION['dname'];
                     $query = "select pid,ID,fname,lname,gender,email,contact,appdate,apptime,userStatus,doctorStatus from appointmenttb where doctor='$dname';";
@@ -272,7 +279,7 @@ if(isset($_GET['cancel']))
                 <tbody>
                   <?php 
 
-                    $con=mysqli_connect("localhost:3307","root","","myhmsdb");
+                    $con=mysqli_connect("localhost","root","steven1234","myhmsdb");
                     global $con;
 
                     $query = "select pid,fname,lname,ID,appdate,apptime,disease,allergy,prescription from prestb where doctor='$doctor';";
@@ -325,7 +332,7 @@ if(isset($_GET['cancel']))
                 <tbody>
                   <?php 
 
-                    $con=mysqli_connect("localhost:3307","root","","myhmsdb");
+                    $con=mysqli_connect("localhost","root","steven1234","myhmsdb");
                     global $con;
 
                     $query = "select * from appointmenttb;";

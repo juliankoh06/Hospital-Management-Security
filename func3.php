@@ -1,13 +1,26 @@
 <?php
-require_once('csrf_helper.php');
+// 1. Start Session (Must be first for headers and CSRF)
 session_start();
-$con=mysqli_connect("localhost:3307","root","","myhmsdb");
+
+// 2. Include Security Headers (From 'security-fixes')
+// Uses __DIR__ for a robust absolute path.
+require_once(__DIR__ . '/include/security_headers.php');
+
+// 3. Include CSRF Helper (From 'HEAD')
+require_once('csrf_helper.php');
+
+$con = mysqli_connect("localhost:3307", "root", "steven1234", "myhmsdb");
+
+if (!$con) {
+    die("Connection failed: " . mysqli_connect_error());
+}
+
 if(isset($_POST['adsub'])){
-	// Validate CSRF token
-	if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
-		die('<script>alert("CSRF token validation failed!"); window.location.href = "index.php";</script>');
-	}
-	
+    // 5. Validate CSRF token (From 'HEAD')
+    // Protects the admin submission form from forgery.
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        die('<script>alert("CSRF token validation failed!"); window.location.href = "index.php";</script>');
+    }
 	$username=$_POST['username1'];
 	$password=$_POST['password2'];
 	$query="select * from admintb where username='$username' and password='$password';";

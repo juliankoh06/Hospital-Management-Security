@@ -1,13 +1,27 @@
 <?php
-require_once('csrf_helper.php');
+// 1. Start Session (Required for both CSRF tokens and general logic)
 session_start();
-$con=mysqli_connect("localhost:3307","root","","myhmsdb");
+
+// 2. Include Security Headers (From 'security-fixes' branch)
+// Using __DIR__ is a best practice for absolute paths.
+require_once(__DIR__ . '/include/security_headers.php'); 
+
+// 3. Include CSRF Helper (From 'HEAD' branch)
+require_once('csrf_helper.php');
+
+$con = mysqli_connect("localhost", "root", "steven1234", "myhmsdb");
+
+// Check for connection errors
+if (!$con) {
+    die("Connection failed: " . mysqli_connect_error());
+}
+
 if(isset($_POST['patsub'])){
-	// Validate CSRF token
-	if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
-		die('<script>alert("CSRF token validation failed!"); window.location.href = "index1.php";</script>');
-	}
-	
+    // 5. Validate CSRF token (From 'HEAD' branch)
+    // We use the null coalescing operator (??) to prevent errors if the token isn't set.
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        die('<script>alert("CSRF token validation failed!"); window.location.href = "index1.php";</script>');
+    }
 	$email=$_POST['email'];
 	$password=$_POST['password2'];
 	$query="select * from patreg where email='$email' and password='$password';";
@@ -34,6 +48,10 @@ if(isset($_POST['patsub'])){
 }
 if(isset($_POST['update_data']))
 {
+  if(!isset($_SESSION['username'])){
+    header("Location: index.php");
+    exit();
+  }
 	$contact=$_POST['contact'];
 	$status=$_POST['status'];
 	$query="update appointmenttb set payment='$status' where contact='$contact';";

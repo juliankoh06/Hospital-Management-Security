@@ -1,6 +1,14 @@
 <?php
-require_once('csrf_helper.php');
+// 1. Start Session
+// Must be called before headers are sent and before CSRF tokens are accessed.
 session_start();
+
+// 2. Include Security Headers (From 'security-fixes')
+// Using __DIR__ ensures the path is resolved correctly regardless of where the script is run.
+require_once(__DIR__ . '/include/security_headers.php');
+
+// 3. Include CSRF Helper (From 'HEAD')
+require_once('csrf_helper.php');
 include("header.php");
 ?>
 <!DOCTYPE html>
