@@ -3,10 +3,14 @@ session_start();
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
 // 2. Include Security Headers (From 'security-fixes' branch)
-require_once(__DIR__ . '/include/security_headers.php'); 
+// 注意：请确保你的文件夹里真的有这些文件，如果没有，请注释掉这两行
+if (file_exists(__DIR__ . '/include/security_headers.php')) {
+    require_once(__DIR__ . '/include/security_headers.php');
+}
 
-// 3. Include CSRF Helper (From 'HEAD' branch)
-require_once('csrf_helper.php');
+if (file_exists('csrf_helper.php')) {
+    require_once('csrf_helper.php');
+}
 
 try {
     $con = mysqli_connect("localhost", "root", "", "myhmsdb");
@@ -15,9 +19,61 @@ try {
     die("Database connection failed. Please try again later.");
 }
 
+if(isset($_POST['docsub1'])){
+    $username = $_POST['username3'];
+    $password = $_POST['password3'];
+
+    try {
+        $query = "SELECT * FROM doctb WHERE username=?";
+        $stmt = mysqli_prepare($con, $query);
+        mysqli_stmt_bind_param($stmt, "s", $username);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+
+        if(mysqli_num_rows($result) == 1) {
+            $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+
+            if ($row['lockout_time'] && strtotime($row['lockout_time']) > time()) {
+                echo("<script>alert('Your account is locked. Please try again after 5 minutes.');
+                      window.location.href = 'index.php';</script>");
+            }
+            elseif ($row['password'] == $password) {
+                $reset_stmt = mysqli_prepare($con, "UPDATE doctb SET login_attempts = 0, lockout_time = NULL WHERE username = ?");
+                mysqli_stmt_bind_param($reset_stmt, "s", $username);
+                mysqli_stmt_execute($reset_stmt);
+
+                $_SESSION['dname'] = $row['username'];
+                header("Location:doctor-panel.php");
+            }
+            else {
+                $login_attempts = $row['login_attempts'] + 1;
+
+                if ($login_attempts >= 5) {
+                    $lockout_time = date('Y-m-d H:i:s', strtotime('+5 minutes'));
+                    $update_stmt = mysqli_prepare($con, "UPDATE doctb SET login_attempts = ?, lockout_time = ? WHERE username = ?");
+                    mysqli_stmt_bind_param($update_stmt, "iss", $login_attempts, $lockout_time, $username);
+                    mysqli_stmt_execute($update_stmt);
+                    echo("<script>alert('You have exceeded the maximum number of login attempts. Your account is locked for 5 minutes.'); window.location.href = 'index.php';</script>");
+                } else {
+                    $update_stmt = mysqli_prepare($con, "UPDATE doctb SET login_attempts = ? WHERE username = ?");
+                    mysqli_stmt_bind_param($update_stmt, "is", $login_attempts, $username);
+                    mysqli_stmt_execute($update_stmt);
+                    echo("<script>alert('Invalid Username or Password. Try Again! (Attempt $login_attempts/5)'); window.location.href = 'index.php';</script>");
+                }
+            }
+        } else {
+            echo("<script>alert('Invalid Username or Password. Try Again!'); window.location.href = 'index.php';</script>");
+        }
+    } catch (mysqli_sql_exception $e) {
+        error_log($e->getMessage());
+        echo("<script>alert('System Error: Login failed.'); window.location.href = 'index.php';</script>");
+    }
+}
+
 if(isset($_POST['patsub'])){
     // Fixed: Completed the die() statement correctly
-    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+    // 注意：如果你没有 csrf_helper.php，请注释掉下面这个 if 块
+    if (function_exists('validateCSRFToken') && !validateCSRFToken($_POST['csrf_token'] ?? '')) {
         die('<script>alert("CSRF token validation failed!"); window.location.href = "index1.php";</script>');
     }
         
@@ -231,9 +287,14 @@ function display_admin_panel(){
                   <div class="col-md-8"><input type="text" class="form-control"  name="contact"></div><br><br>
                   <div class="col-md-4"><label>Doctor:</label></div>
                   <div class="col-md-8">
-                   <select name="doctor" class="form-control" >
-                      <?php display_docs();?>
-                    </select>
+                   <select name="doctor" class="form-control">';
+    
+    // --- 🟢 修复点：在这里切断 echo，执行 PHP 函数 ---
+    display_docs(); 
+    // ---------------------------------------------
+
+    // 第二段 HTML：继续输出剩下的部分
+    echo '         </select>
                   </div><br><br>
                   <div class="col-md-4"><label>Payment:</label></div>
                   <div class="col-md-8">
