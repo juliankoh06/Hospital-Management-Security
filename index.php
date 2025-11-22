@@ -200,7 +200,7 @@ function strengthChecker() {
                             
                             <div class="tab-pane fade show" id="profile" role="tabpanel" aria-labelledby="profile-tab">
                                 <h3  class="register-heading">Login as Doctor</h3>
-                                <form method="post" action="func1.php">
+                                <form method="post" action="func.php">
                                 <div class="row register-form">
                                     <div class="col-md-6">
                                         <div class="form-group">
