@@ -2,6 +2,12 @@
 session_start();
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
+// 2. Include Security Headers (From 'security-fixes' branch)
+require_once(__DIR__ . '/include/security_headers.php'); 
+
+// 3. Include CSRF Helper (From 'HEAD' branch)
+require_once('csrf_helper.php');
+
 try {
     $con = mysqli_connect("localhost", "root", "", "myhmsdb");
 } catch (mysqli_sql_exception $e) {
@@ -10,6 +16,11 @@ try {
 }
 
 if(isset($_POST['patsub'])){
+    // Fixed: Completed the die() statement correctly
+    if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+        die('<script>alert("CSRF token validation failed!"); window.location.href = "index1.php";</script>');
+    }
+        
     $email = $_POST['email'];
     $password = $_POST['password2'];
 
@@ -278,14 +289,16 @@ function display_admin_panel(){
    <script type="text/javascript">
    $(document).ready(function(){
     swal({
-  title: "Welcome!",
-  text: "Have a nice day!",
-  imageUrl: "images/sweet.jpg",
-  imageWidth: 400,
-  imageHeight: 200,
-  imageAlt: "Custom image",
-  animation: false
-})</script>
+      title: "Welcome!",
+      text: "Have a nice day!",
+      imageUrl: "images/sweet.jpg",
+      imageWidth: 400,
+      imageHeight: 200,
+      imageAlt: "Custom image",
+      animation: false
+    }); 
+   }); 
+   </script>
   </body>
 </html>';
 }
