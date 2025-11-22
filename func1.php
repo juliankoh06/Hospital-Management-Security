@@ -1,44 +1,31 @@
 <?php
+require_once('csrf_helper.php');
 session_start();
-$con=mysqli_connect("localhost","root","","myhmsdb");
+$con=mysqli_connect("localhost:3307","root","","myhmsdb");
 if(isset($_POST['docsub1'])){
-    $dname = $_POST['username3'];
-    $dpass = $_POST['password3'];
-    $dname = mysqli_real_escape_string($con, $dname);
-
-    $query = "select * from doctb where username='$dname';";
-    $result = mysqli_query($con, $query);
-    if (mysqli_num_rows($result) == 1) {
-        $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-
-        if ($row['lockout_time'] && strtotime($row['lockout_time']) > time()) {
-            echo("<script>alert('Your account is locked. Please try again after 5 minutes.');
-                  window.location.href = 'index.php';</script>");
-        } elseif ($row['password'] == $dpass) {
-            // Successful login
-            mysqli_query($con, "UPDATE doctb SET login_attempts = 0, lockout_time = NULL WHERE username = '$dname'");
-
-            $_SESSION['dname'] = $row['username'];
-            header("Location:doctor-panel.php");
-        } else {
-            // Incorrect password
-            $login_attempts = $row['login_attempts'] + 1;
-            if ($login_attempts >= 5) {
-                $lockout_time = date('Y-m-d H:i:s', strtotime('+5 minutes'));
-                mysqli_query($con, "UPDATE doctb SET login_attempts = $login_attempts, lockout_time = '$lockout_time' WHERE username = '$dname'");
-                echo("<script>alert('You have exceeded the maximum number of login attempts. Your account is locked for 5 minutes.');
-                      window.location.href = 'index.php';</script>");
-            } else {
-                mysqli_query($con, "UPDATE doctb SET login_attempts = $login_attempts WHERE username = '$dname'");
-                echo("<script>alert('Invalid Username or Password. Try Again!');
-                      window.location.href = 'index.php';</script>");
-            }
-        }
-    } else {
-        // User not found
-        echo("<script>alert('Invalid Username or Password. Try Again!');
-              window.location.href = 'index.php';</script>");
+	// Validate CSRF token
+	if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+		die('<script>alert("CSRF token validation failed!"); window.location.href = "index.php";</script>');
+	}
+	
+	$dname=$_POST['username3'];
+	$dpass=$_POST['password3'];
+	$query="select * from doctb where username='$dname' and password='$dpass';";
+	$result=mysqli_query($con,$query);
+	if(mysqli_num_rows($result)==1)
+	{
+    while($row=mysqli_fetch_array($result,MYSQLI_ASSOC)){
+    
+		      $_SESSION['dname']=$row['username'];
+      
     }
+		header("Location:doctor-panel.php");
+	}
+	else{
+    // header("Location:error2.php");
+    echo("<script>alert('Invalid Username or Password. Try Again!');
+          window.location.href = 'index.php';</script>");
+  }
 }
 
 
@@ -62,7 +49,7 @@ function display_docs()
 	$result=mysqli_query($con,$query);
 	while($row=mysqli_fetch_array($result))
 	{
-		$name=$row['name'];
+		$name = htmlspecialchars($row['name'], ENT_QUOTES, 'UTF-8');
 		# echo'<option value="" disabled selected>Select Doctor</option>';
 		echo '<option value="'.$name.'">'.$name.'</option>';
 	}

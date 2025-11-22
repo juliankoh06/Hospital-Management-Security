@@ -1,34 +1,22 @@
 <!DOCTYPE html>
 <?php 
-$con=mysqli_connect("localhost","root","","myhmsdb");
+$con=mysqli_connect("localhost:3307","root","","myhmsdb");
 
 include('newfunc.php');
 
 if(isset($_POST['docsub']))
 {
-    $doctor=$_POST['doctor'];
-    $dpassword=$_POST['dpassword'];
-    $demail=$_POST['demail'];
-    $spec=$_POST['special'];
-    $docFees=$_POST['docFees'];
-
-    // Password strength validation
-    $uppercase = preg_match('@[A-Z]@', $dpassword);
-    $lowercase = preg_match('@[a-z]@', $dpassword);
-    $number    = preg_match('@[0-9]@', $dpassword);
-    $specialChars = preg_match('@[^\w]@', $dpassword);
-
-    if(!$uppercase || !$lowercase || !$number || !$specialChars || strlen($dpassword) < 8) {
-        echo("<script>alert('Password should be at least 8 characters long and should include at least one upper case letter, one number, and one special character.');
-              window.location.href = 'admin-panel1.php#list-settings';</script>");
-    } else {
-        $query="insert into doctb(username,password,email,spec,docFees,login_attempts,lockout_time)values('$doctor','$dpassword','$demail','$spec','$docFees', 0, NULL)";
-        $result=mysqli_query($con,$query);
-        if($result) {
-            echo("<script>alert('Doctor added successfully!');
-                  window.location.href = 'admin-panel1.php#list-doc';</script>");
-        }
-    }
+  $doctor=$_POST['doctor'];
+  $dpassword=$_POST['dpassword'];
+  $demail=$_POST['demail'];
+  $spec=$_POST['special'];
+  $docFees=$_POST['docFees'];
+  $query="insert into doctb(username,password,email,spec,docFees)values('$doctor','$dpassword','$demail','$spec','$docFees')";
+  $result=mysqli_query($con,$query);
+  if($result)
+    {
+      echo "<script>alert('Doctor added successfully!');</script>";
+  }
 }
 
 
@@ -284,7 +272,7 @@ if(isset($_POST['docsub1']))
                 </thead>
                 <tbody>
                   <?php 
-                    $con=mysqli_connect("localhost","root","","myhmsdb");
+                    $con=mysqli_connect("localhost:3307","root","","myhmsdb");
                     global $con;
                     $query = "select * from doctb";
                     $result = mysqli_query($con,$query);
@@ -335,7 +323,7 @@ if(isset($_POST['docsub1']))
                 </thead>
                 <tbody>
                   <?php 
-                    $con=mysqli_connect("localhost","root","","myhmsdb");
+                    $con=mysqli_connect("localhost:3307","root","","myhmsdb");
                     global $con;
                     $query = "select * from patreg";
                     $result = mysqli_query($con,$query);
@@ -391,7 +379,7 @@ if(isset($_POST['docsub1']))
                 </thead>
                 <tbody>
                   <?php 
-                    $con=mysqli_connect("localhost","root","","myhmsdb");
+                    $con=mysqli_connect("localhost:3307","root","","myhmsdb");
                     global $con;
                     $query = "select * from prestb";
                     $result = mysqli_query($con,$query);
@@ -463,7 +451,7 @@ if(isset($_POST['docsub1']))
                 <tbody>
                   <?php 
 
-                    $con=mysqli_connect("localhost","root","","myhmsdb");
+                    $con=mysqli_connect("localhost:3307","root","","myhmsdb");
                     global $con;
 
                     $query = "select * from appointmenttb;";
@@ -471,17 +459,17 @@ if(isset($_POST['docsub1']))
                     while ($row = mysqli_fetch_array($result)){
                   ?>
                       <tr>
-                        <td><?php echo $row['ID'];?></td>
-                        <td><?php echo $row['pid'];?></td>
-                        <td><?php echo $row['fname'];?></td>
-                        <td><?php echo $row['lname'];?></td>
-                        <td><?php echo $row['gender'];?></td>
-                        <td><?php echo $row['email'];?></td>
-                        <td><?php echo $row['contact'];?></td>
-                        <td><?php echo $row['doctor'];?></td>
-                        <td><?php echo $row['docFees'];?></td>
-                        <td><?php echo $row['appdate'];?></td>
-                        <td><?php echo $row['apptime'];?></td>
+                        <td><?php echo htmlspecialchars($row['ID'], ENT_QUOTES, 'UTF-8');?></td>
+                        <td><?php echo htmlspecialchars($row['pid'], ENT_QUOTES, 'UTF-8');?></td>
+                        <td><?php echo htmlspecialchars($row['fname'], ENT_QUOTES, 'UTF-8');?></td>
+                        <td><?php echo htmlspecialchars($row['lname'], ENT_QUOTES, 'UTF-8');?></td>
+                        <td><?php echo htmlspecialchars($row['gender'], ENT_QUOTES, 'UTF-8');?></td>
+                        <td><?php echo htmlspecialchars($row['email'], ENT_QUOTES, 'UTF-8');?></td>
+                        <td><?php echo htmlspecialchars($row['contact'], ENT_QUOTES, 'UTF-8');?></td>
+                        <td><?php echo htmlspecialchars($row['doctor'], ENT_QUOTES, 'UTF-8');?></td>
+                        <td><?php echo htmlspecialchars($row['docFees'], ENT_QUOTES, 'UTF-8');?></td>
+                        <td><?php echo htmlspecialchars($row['appdate'], ENT_QUOTES, 'UTF-8');?></td>
+                        <td><?php echo htmlspecialchars($row['apptime'], ENT_QUOTES, 'UTF-8');?></td>
                         <td>
                     <?php if(($row['userStatus']==1) && ($row['doctorStatus']==1))  
                     {
@@ -573,7 +561,7 @@ if(isset($_POST['docsub1']))
                 <tbody>
                   <?php 
 
-                    $con=mysqli_connect("localhost","root","","myhmsdb");
+                    $con=mysqli_connect("localhost:3307","root","","myhmsdb");
                     global $con;
 
                     $query = "select * from contact;";
@@ -586,10 +574,10 @@ if(isset($_POST['docsub1']))
                       #$contact = $row['contact'];
                   ?>
                       <tr>
-                        <td><?php echo $row['name'];?></td>
-                        <td><?php echo $row['email'];?></td>
-                        <td><?php echo $row['contact'];?></td>
-                        <td><?php echo $row['message'];?></td>
+                        <td><?php echo htmlspecialchars($row['name'], ENT_QUOTES, 'UTF-8');?></td>
+                        <td><?php echo htmlspecialchars($row['email'], ENT_QUOTES, 'UTF-8');?></td>
+                        <td><?php echo htmlspecialchars($row['contact'], ENT_QUOTES, 'UTF-8');?></td>
+                        <td><?php echo htmlspecialchars($row['message'], ENT_QUOTES, 'UTF-8');?></td>
                       </tr>
                     <?php } ?>
                 </tbody>

@@ -1,7 +1,13 @@
 <?php
+require_once('csrf_helper.php');
 session_start();
-$con=mysqli_connect("localhost","root","","myhmsdb");
+$con=mysqli_connect("localhost:3307","root","","myhmsdb");
 if(isset($_POST['patsub1'])){
+	// Validate CSRF token
+	if (!validateCSRFToken($_POST['csrf_token'] ?? '')) {
+		die('<script>alert("CSRF token validation failed!"); window.location.href = "index.php";</script>');
+	}
+	
 	$fname=$_POST['fname'];
   $lname=$_POST['lname'];
   $gender=$_POST['gender'];
@@ -9,33 +15,29 @@ if(isset($_POST['patsub1'])){
   $contact=$_POST['contact'];
 	$password=$_POST['password'];
   $cpassword=$_POST['cpassword'];
+  if($password==$cpassword){
+  	$query="insert into patreg(fname,lname,gender,email,contact,password,cpassword) values ('$fname','$lname','$gender','$email','$contact','$password','$cpassword');";
+    $result=mysqli_query($con,$query);
+    if($result){
+        $_SESSION['username'] = $_POST['fname']." ".$_POST['lname'];
+        $_SESSION['fname'] = $_POST['fname'];
+        $_SESSION['lname'] = $_POST['lname'];
+        $_SESSION['gender'] = $_POST['gender'];
+        $_SESSION['contact'] = $_POST['contact'];
+        $_SESSION['email'] = $_POST['email'];
+        header("Location:admin-panel.php");
+    } 
 
-  // Password strength validation
-  $uppercase = preg_match('@[A-Z]@', $password);
-  $lowercase = preg_match('@[a-z]@', $password);
-  $number    = preg_match('@[0-9]@', $password);
-  $specialChars = preg_match('@[^\w]@', $password);
-
-  if(!$uppercase || !$lowercase || !$number || !$specialChars || strlen($password) < 8) {
-      echo("<script>alert('Password should be at least 8 characters long and should include at least one upper case letter, one number, and one special character.');
-            window.location.href = 'index.php';</script>");
-  } elseif($password == $cpassword) {
-      $query="insert into patreg(fname,lname,gender,email,contact,password,cpassword,login_attempts,lockout_time) values ('$fname','$lname','$gender','$email','$contact','$password','$cpassword', 0, NULL);";
-      $result=mysqli_query($con,$query);
-      if($result){
-          $pid = mysqli_insert_id($con);
-          $_SESSION['pid'] = $pid;
-          $_SESSION['username'] = $_POST['fname']." ".$_POST['lname'];
-          $_SESSION['fname'] = $_POST['fname'];
-          $_SESSION['lname'] = $_POST['lname'];
-          $_SESSION['gender'] = $_POST['gender'];
-          $_SESSION['contact'] = $_POST['contact'];
-          $_SESSION['email'] = $_POST['email'];
-          header("Location:admin-panel.php");
-      }
-  } else {
-      header("Location:error1.php");
+    $query1 = "select * from patreg;";
+    $result1 = mysqli_query($con,$query1);
+    if($result1){
+      $_SESSION['pid'] = $row['pid'];
     }
+
+  }
+  else{
+    header("Location:error1.php");
+  }
 }
 if(isset($_POST['update_data']))
 {

@@ -1,3 +1,7 @@
+<?php
+require_once('csrf_helper.php');
+session_start();
+?>
 <html>
 <head>
 	<title>HMS</title>
@@ -14,28 +18,6 @@
 <style >
      .form-control {
     border-radius: 0.75rem;
-}
-
-#password-strength-status {
-    padding: 5px 10px;
-    color: #FFFFFF;
-    border-radius: 4px;
-    margin-top: 5px;
-    font-size: 0.8em;
-    text-align: center;
-}
-.weak-password {
-    background-color: #f55252;
-    border: #f5c6cb 1px solid;
-}
-.medium-password {
-    background-color: #ffc107;
-    border: #ffeeba 1px solid;
-    color: #000;
-}
-.strong-password {
-    background-color: #5dd05d;
-    border: #c3e6cb 1px solid;
 }
 </style>
 
@@ -65,34 +47,6 @@ function checklen()
   }  
 }
 
-function strengthChecker() {
-    var strength = 0;
-    var password = document.getElementById("password").value;
-    var passwordStrengthStatus = document.getElementById("password-strength-status");
-
-    if (password.length == 0) {
-        passwordStrengthStatus.innerHTML = "";
-        return;
-    }
-
-    if (password.length >= 8) {
-        strength += 1;
-    }
-    if (password.match(/([a-z].*[A-Z])|([A-Z].*[a-z])/)) {
-        strength += 1;
-    }
-    if (password.match(/([0-9])/)) {
-        strength += 1;
-    }
-    if (password.match(/([!,%,&,@,#,$,^,*,?,_,~])/)) {
-        strength += 1;
-    }
-
-    var strengthText = ["", "Weak", "Medium", "Strong", "Very Strong"];
-    var strengthClass = ["", "weak-password", "medium-password", "strong-password", "strong-password"];
-    passwordStrengthStatus.className = strengthClass[strength];
-    passwordStrengthStatus.innerHTML = strengthText[strength];
-}
 </script>
 
 </head>
@@ -159,8 +113,7 @@ function strengthChecker() {
                                             <input type="email" class="form-control" placeholder="Your Email *" name="email"  />
                                         </div>
                                         <div class="form-group">
-                                            <input type="password" class="form-control" placeholder="Password *" id="password" name="password" onkeyup="check(); strengthChecker();" required/>
-                                            <div id="password-strength-status"></div>
+                                            <input type="password" class="form-control" placeholder="Password *" id="password" name="password" onkeyup='check();' required/>
                                         </div>
                                         
                                         <div class="form-group">
@@ -189,6 +142,7 @@ function strengthChecker() {
                                         <div class="form-group">
                                             <input type="password" class="form-control"  id="cpassword" placeholder="Confirm Password *" name="cpassword"  onkeyup='check();' required/><span id='message'></span>
                                         </div>
+                                        <?php echo csrfTokenField(); ?>
                                         <input type="submit" class="btnRegister" name="patsub1" onclick="return checklen();" value="Register"/>
                                     </div>
 
@@ -210,7 +164,7 @@ function strengthChecker() {
                                         <div class="form-group">
                                             <input type="password" class="form-control" placeholder="Password *" name="password3" required/>
                                         </div>
-                                        
+                                        <?php echo csrfTokenField(); ?>
                                         <input type="submit" class="btnRegister" name="docsub1" value="Login"/>
                                     </div>
                                 </div>
@@ -234,7 +188,7 @@ function strengthChecker() {
                                         <div class="form-group">
                                             <input type="password" class="form-control" placeholder="Password *" name="password2" required/>
                                         </div>
-                                        
+                                        <?php echo csrfTokenField(); ?>
                                         <input type="submit" class="btnRegister" name="adsub" value="Login"/>
                                     </div>
                                 </div>
