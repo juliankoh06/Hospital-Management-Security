@@ -2,8 +2,6 @@
 session_start();
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
-// 2. Include Security Headers (From 'security-fixes' branch)
-// 注意：请确保你的文件夹里真的有这些文件，如果没有，请注释掉这两行
 if (file_exists(__DIR__ . '/include/security_headers.php')) {
     require_once(__DIR__ . '/include/security_headers.php');
 }
