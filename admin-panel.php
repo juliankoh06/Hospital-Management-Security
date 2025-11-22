@@ -2,7 +2,6 @@
 <?php 
 require_once(__DIR__ . '/include/security_headers.php');
 include('func.php');  
-include('newfunc.php');
 
 // Enable error reporting for debugging (log errors instead of showing them to users in production)
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
@@ -559,3 +558,4 @@ function get_specs(){
    </script>
   </body>
 </html>
+
