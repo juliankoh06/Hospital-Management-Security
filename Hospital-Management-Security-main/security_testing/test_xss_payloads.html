@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XSS Testing Payloads - Hospital Management System</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .payload-container {
+            background: white;
+            border-left: 4px solid #f44336;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .payload-container.safe {
+            border-left-color: #4CAF50;
+        }
+        .payload-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .payload-code {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .test-button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .test-button:hover {
+            background: #5568d3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            display: none;
+        }
+        .result.success {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            display: block;
+        }
+        .result.danger {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            display: block;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background: #667eea;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background: #f9f9f9;
+        }
+        .copy-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        .copy-btn:hover {
+            background: #45a049;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔒 XSS Security Testing Suite</h1>
+        <p>Hospital Management System - Security Assessment Tool</p>
+        <p><strong>Testing Date:</strong> November 15, 2025</p>
+    </div>
+
+    <div class="warning">
+        ⚠️ <strong>WARNING:</strong> These payloads are for authorized security testing only. 
+        Use only on systems you own or have explicit permission to test.
+    </div>
+
+    <div class="test-section">
+        <h2>📋 Standard XSS Test Payloads</h2>
+        <p>Use these payloads to test each input field in the system:</p>
+
+        <div class="payload-container">
+            <div class="payload-title">1. Basic Script Injection</div>
+            <div class="payload-code">
+                &lt;script&gt;alert('XSS')&lt;/script&gt;
+                <button class="copy-btn" onclick="copyPayload(this, '<script>alert(\'XSS\')</script>')">Copy</button>
+            </div>
+        </div>
+
+        <div class="payload-container">
+            <div class="payload-title">2. Image Event Handler</div>
+            <div class="payload-code">
+                &lt;img src=x onerror=alert('XSS')&gt;
+                <button class="copy-btn" onclick="copyPayload(this, '<img src=x onerror=alert(\'XSS\')>')">Copy</button>
+            </div>
+        </div>
+
+        <div class="payload-container">
+            <div class="payload-title">3. SVG OnLoad</div>
+            <div class="payload-code">
+                &lt;svg/onload=alert('XSS')&gt;
+                <button class="copy-btn" onclick="copyPayload(this, '<svg/onload=alert(\'XSS\')>')">Copy</button>
+            </div>
+        </div>
+
+        <div class="payload-container">
+            <div class="payload-title">4. Double Quote Break</div>
+            <div class="payload-code">
+                "&gt;&lt;script&gt;alert(String.fromCharCode(88,83,83))&lt;/script&gt;
+                <button class="copy-btn" onclick="copyPayload(this, '&quot;><script>alert(String.fromCharCode(88,83,83))</script>')">Copy</button>
+            </div>
+        </div>
+
+        <div class="payload-container">
+            <div class="payload-title">5. IFrame JavaScript Protocol</div>
+            <div class="payload-code">
+                &lt;iframe src="javascript:alert('XSS')"&gt;
+                <button class="copy-btn" onclick="copyPayload(this, '<iframe src=&quot;javascript:alert(&#39;XSS&#39;)&quot;>')">Copy</button>
+            </div>
+        </div>
+
+        <div class="payload-container">
+            <div class="payload-title">6. Body OnLoad</div>
+            <div class="payload-code">
+                &lt;body onload=alert('XSS')&gt;
+                <button class="copy-btn" onclick="copyPayload(this, '<body onload=alert(&#39;XSS&#39;)>')">Copy</button>
+            </div>
+        </div>
+
+        <div class="payload-container">
+            <div class="payload-title">7. Input AutoFocus</div>
+            <div class="payload-code">
+                &lt;input onfocus=alert('XSS') autofocus&gt;
+                <button class="copy-btn" onclick="copyPayload(this, '<input onfocus=alert(&#39;XSS&#39;) autofocus>')">Copy</button>
+            </div>
+        </div>
+
+        <div class="payload-container">
+            <div class="payload-title">8. Cookie Theft Simulation</div>
+            <div class="payload-code">
+                &lt;script&gt;alert(document.cookie)&lt;/script&gt;
+                <button class="copy-btn" onclick="copyPayload(this, '<script>alert(document.cookie)</script>')">Copy</button>
+            </div>
+        </div>
+
+        <div class="payload-container">
+            <div class="payload-title">9. Details OnToggle</div>
+            <div class="payload-code">
+                &lt;details open ontoggle=alert('XSS')&gt;
+                <button class="copy-btn" onclick="copyPayload(this, '<details open ontoggle=alert(\'XSS\')>')">Copy</button>
+            </div>
+        </div>
+
+        <div class="payload-container">
+            <div class="payload-title">10. Marquee OnStart</div>
+            <div class="payload-code">
+                &lt;marquee onstart=alert('XSS')&gt;
+                <button class="copy-btn" onclick="copyPayload(this, '<marquee onstart=alert(\'XSS\')>')">Copy</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="test-section">
+        <h2>🎯 Testing Locations in Hospital Management System</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>File</th>
+                    <th>Input Field</th>
+                    <th>Test Method</th>
+                    <th>Vulnerability Type</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>search.php</td>
+                    <td>Contact number search field</td>
+                    <td>POST parameter</td>
+                    <td>Reflected XSS</td>
+                </tr>
+                <tr>
+                    <td>contact.php</td>
+                    <td>Name, Email, Message fields</td>
+                    <td>POST parameters</td>
+                    <td>Stored XSS</td>
+                </tr>
+                <tr>
+                    <td>prescribe.php</td>
+                    <td>URL parameters (fname, lname, etc.)</td>
+                    <td>GET parameters</td>
+                    <td>Reflected XSS</td>
+                </tr>
+                <tr>
+                    <td>admin-panel.php</td>
+                    <td>Database output (doctor names, fees)</td>
+                    <td>Display from DB</td>
+                    <td>Stored XSS</td>
+                </tr>
+                <tr>
+                    <td>appsearch.php</td>
+                    <td>Appointment contact search</td>
+                    <td>POST parameter</td>
+                    <td>Reflected XSS</td>
+                </tr>
+                <tr>
+                    <td>doctor-panel.php</td>
+                    <td>Search form, patient data display</td>
+                    <td>POST/Display</td>
+                    <td>Reflected & Stored XSS</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="test-section">
+        <h2>✅ Expected Results After Fix</h2>
+        
+        <div class="payload-container safe">
+            <div class="payload-title">Secure Output Example</div>
+            <div class="payload-code">
+                // Input: &lt;script&gt;alert('XSS')&lt;/script&gt;<br>
+                // Output (HTML source): &amp;lt;script&amp;gt;alert('XSS')&amp;lt;/script&amp;gt;<br>
+                // Display: &lt;script&gt;alert('XSS')&lt;/script&gt; (as plain text)
+            </div>
+        </div>
+
+        <h3>Testing Checklist:</h3>
+        <ul style="list-style-type: none; padding: 0;">
+            <li>✓ No alert boxes appear</li>
+            <li>✓ HTML special characters are encoded (&lt; &gt; " ' &amp;)</li>
+            <li>✓ Malicious code displayed as plain text</li>
+            <li>✓ View page source shows HTML entities</li>
+            <li>✓ Browser console shows no JavaScript errors</li>
+            <li>✓ No scripts execute from URL parameters</li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h2>📸 Screenshot Guide for Report</h2>
+        <ol>
+            <li><strong>Before Fix - Vulnerable State:</strong>
+                <ul>
+                    <li>Screenshot of payload in input field</li>
+                    <li>Screenshot of alert box appearing</li>
+                    <li>Screenshot of browser console showing execution</li>
+                </ul>
+            </li>
+            <li><strong>Code Comparison:</strong>
+                <ul>
+                    <li>Screenshot of vulnerable code (without htmlspecialchars)</li>
+                    <li>Screenshot of fixed code (with htmlspecialchars)</li>
+                </ul>
+            </li>
+            <li><strong>After Fix - Secure State:</strong>
+                <ul>
+                    <li>Screenshot showing payload rendered as text</li>
+                    <li>Screenshot of HTML source with encoded entities</li>
+                    <li>Screenshot of clean browser console (no errors)</li>
+                </ul>
+            </li>
+            <li><strong>Security Scan Results:</strong>
+                <ul>
+                    <li>OWASP ZAP or Burp Suite scan results</li>
+                    <li>Before: High severity findings</li>
+                    <li>After: Clean scan or low severity</li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>🔧 Quick Testing Steps</h2>
+        
+        <h3>Step 1: Test search.php</h3>
+        <ol>
+            <li>Login as doctor (username: doctor, password: from database)</li>
+            <li>In the search field, enter: <code>&lt;script&gt;alert('XSS')&lt;/script&gt;</code></li>
+            <li>Submit the form</li>
+            <li><strong>Before fix:</strong> Alert box will appear</li>
+            <li><strong>After fix:</strong> Text will be displayed as-is</li>
+        </ol>
+
+        <h3>Step 2: Test contact.php</h3>
+        <ol>
+            <li>Navigate to contact.html</li>
+            <li>In the Name field, enter: <code>&lt;img src=x onerror=alert('XSS')&gt;</code></li>
+            <li>Fill other fields normally</li>
+            <li>Submit the form</li>
+            <li>Check where contact data is displayed (admin panel)</li>
+            <li><strong>Before fix:</strong> Script executes when viewing</li>
+            <li><strong>After fix:</strong> HTML is escaped and displayed as text</li>
+        </ol>
+
+        <h3>Step 3: Test URL parameters</h3>
+        <ol>
+            <li>Craft URL: <code>prescribe.php?fname=&lt;script&gt;alert('XSS')&lt;/script&gt;&lname=Test&pid=1&ID=1&appdate=2025-01-01&apptime=10:00:00</code></li>
+            <li>Navigate to this URL</li>
+            <li><strong>Before fix:</strong> Script in URL executes</li>
+            <li><strong>After fix:</strong> Parameter is sanitized/escaped</li>
+        </ol>
+    </div>
+
+    <div class="test-section">
+        <h2>📊 Test Results Template</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Test ID</th>
+                    <th>Location</th>
+                    <th>Payload</th>
+                    <th>Before Fix</th>
+                    <th>After Fix</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>TC-001</td>
+                    <td>search.php (contact field)</td>
+                    <td>&lt;script&gt;alert('XSS')&lt;/script&gt;</td>
+                    <td style="color: red;">❌ Vulnerable</td>
+                    <td style="color: green;">✅ Secure</td>
+                    <td style="color: green;">FIXED</td>
+                </tr>
+                <tr>
+                    <td>TC-002</td>
+                    <td>contact.php (name field)</td>
+                    <td>&lt;img src=x onerror=alert(1)&gt;</td>
+                    <td style="color: red;">❌ Vulnerable</td>
+                    <td style="color: green;">✅ Secure</td>
+                    <td style="color: green;">FIXED</td>
+                </tr>
+                <tr>
+                    <td>TC-003</td>
+                    <td>prescribe.php (URL param)</td>
+                    <td>fname=&lt;svg/onload=alert(1)&gt;</td>
+                    <td style="color: red;">❌ Vulnerable</td>
+                    <td style="color: green;">✅ Secure</td>
+                    <td style="color: green;">FIXED</td>
+                </tr>
+                <!-- Add more rows as needed -->
+            </tbody>
+        </table>
+    </div>
+
+    <div id="notification" style="display:none; position: fixed; top: 20px; right: 20px; background: #4CAF50; color: white; padding: 15px; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+        Payload copied to clipboard!
+    </div>
+
+    <script>
+        function copyPayload(button, text) {
+            // Create temporary textarea
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            
+            // Select and copy
+            textarea.select();
+            document.execCommand('copy');
+            
+            // Remove textarea
+            document.body.removeChild(textarea);
+            
+            // Show notification
+            const notification = document.getElementById('notification');
+            notification.style.display = 'block';
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 2000);
+            
+            // Change button text temporarily
+            const originalText = button.textContent;
+            button.textContent = 'Copied!';
+            button.style.background = '#45a049';
+            setTimeout(() => {
+                button.textContent = originalText;
+                button.style.background = '#4CAF50';
+            }, 2000);
+        }
+
+        // Add timestamp
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('%c⚠️ XSS Testing Tool Loaded', 'color: #f44336; font-size: 16px; font-weight: bold;');
+            console.log('%cUse responsibly and only on authorized systems!', 'color: #ff9800; font-size: 14px;');
+        });
+    </script>
+</body>
+</html>

