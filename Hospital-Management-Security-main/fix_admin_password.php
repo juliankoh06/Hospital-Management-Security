@@ -1,6 +1,5 @@
 <?php
 // fix_admin_password.php
-// Quick fix for admin password
 
 $con = mysqli_connect("localhost", "root", "", "myhmsdb");
 
