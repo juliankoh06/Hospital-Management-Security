@@ -38,9 +38,36 @@ Live Demo : [Hospital Management System - 000webhost by Kishan](https://kishan07
 5. Open your web browser and type 'localhost/phpmyadmin'
 6. In phpmyadmin page, create a new database from the left panel and name it as 'myhmsdb'
 7. Import the file 'myhmsdb.sql' inside your newly created database and click ok.
-8. Open a new tab and type 'localhost/foldername' in the url of your browser
-9. Hurray! That's it!
-    
+8. Password Security Setup (NEW):
+   
+   Before accessing the system, you must hash all passwords for security:
+   
+   Step 8a: Run Password Migration Script
+   - Open a new browser tab
+   - Type: `http://localhost/Hospital-Management-Security-main/pass_migration.php` 
+   - Wait for the script to complete (displays "Migration Complete" message)
+   - This converts all existing plaintext passwords to secure bcrypt hashes
+   - **IMPORTANT:**- After seeing success message, DELETE the file `pass_migration.php` from your project folder for security
+   
+   Step 8b: Generate Admin Password Hash
+   - Open a new browser tab :
+   - Type: `http://localhost/Hospital-Management-Security-Main/fix_admin_password.php`
+   - The script will check if admin password is already hashed
+   - If not hashed, it will automatically hash it and show the original password
+   - **Note down the original password shown** - use this to login
+   - **IMPORTANT:** DELETE this file after use
+   
+   **Note:** These scripts should only be run ONCE during initial setup. Delete them immediately after use to prevent security risks.
+
+9. Open a new tab and type 'localhost/foldername' in the url of your browser
+10. Hurray! That's it!
+
+**Important Notes:**
+- All passwords are now securely stored as bcrypt hashes in the database
+- Users can still login with their original plaintext passwords
+- The system automatically verifies hashed passwords during login
+- Never store plaintext passwords in the database again
+
 ### SOFTWARES USED
   - XAMPP was installed on the Ubuntu 19.04 machine and APACHE2 Server and MySQL were initialized. And, files were built inside opt/lampp/htdocs/myhmsp
   - Sublime Text 3.2 was used as a text editor.
